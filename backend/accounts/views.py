@@ -15,6 +15,9 @@ def _profile(p):
             "timezone": p.timezone, "onboardingComplete": p.onboarding_complete,
             "initialTargets": {"calories": float(p.initial_calories), "protein": float(p.initial_protein), "fat": float(p.initial_fat)}}
 
+def _session_payload(user):
+    return {"user": {"id": str(user.pk), "email": user.email}, "profile": _profile(user.profile)}
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def csrf(request): return Response({"csrfToken": get_token(request)})
@@ -23,7 +26,7 @@ def csrf(request): return Response({"csrfToken": get_token(request)})
 @permission_classes([AllowAny])
 def session(request):
     if not request.user.is_authenticated: return Response({"user": None, "profile": None})
-    return Response({"user": {"id": str(request.user.pk), "email": request.user.email}, "profile": _profile(request.user.profile)})
+    return Response(_session_payload(request.user))
 
 def credentials(data):
     return str(data.get("email", "")).strip().lower(), str(data.get("password", ""))
@@ -36,8 +39,8 @@ def register(request):
     if User.objects.filter(email__iexact=email).exists(): return Response({"email": ["An account already exists."]}, status=400)
     user = User.objects.create_user(email=email, password=password)
     user.profile.display_name = str(request.data.get("name", ""))[:100]; user.profile.save()
-    login(request, user)
-    return session(request)
+    login(request._request, user, backend="django.contrib.auth.backends.ModelBackend")
+    return Response(_session_payload(user))
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -45,12 +48,12 @@ def login_view(request):
     email, password = credentials(request.data)
     user = authenticate(request, email=email, password=password)
     if not user: return Response({"detail": "Invalid email or password."}, status=400)
-    login(request, user); return session(request)
+    login(request._request, user, backend="django.contrib.auth.backends.ModelBackend"); return Response(_session_payload(user))
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
-    logout(request); return Response(status=204)
+    logout(request._request); return Response(status=204)
 
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
