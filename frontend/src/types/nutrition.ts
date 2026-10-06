@@ -17,6 +17,7 @@ export interface FoodItem extends Macros {
 }
 
 export interface Meal {
+  position: number;
   id: string;
   date: string;
   name: string;
@@ -38,11 +39,17 @@ export interface MealDraft {
 }
 
 export interface ProgressPhoto {
+  thumbnailUrl: string;
+  label: string;
+  note: string;
+  capturedOn: string;
   id: string;
   url: string;
 }
 
 export interface WeeklyRecord {
+  measuredOn?: string;
+  note?: string;
   weekStart: string;
   weightKg: number | null;
   photos: ProgressPhoto[];
