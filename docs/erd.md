@@ -4,7 +4,7 @@
 **Backend:** Django / Django REST Framework\
 **Database:** PostgreSQL recommended
 
-This schema covers DailyFuel's agreed scope: daily calories/protein/fat targets, whole-meal or optional itemized food logging, private weekly weight/photos, and lightweight logging-based gamification. It intentionally contains no exercise or carbohydrate entities.
+This schema covers DailyFuel's agreed scope: daily calories/protein/carbohydrate/fat targets, whole-meal or optional itemized food logging, private weekly weight/photos, and lightweight logging-based gamification. It intentionally contains no exercise entities.
 
 ## Entity relationship diagram
 
@@ -64,6 +64,7 @@ One user's target snapshot for one local calendar date. Create lazily when the d
 | `local_date` | DATE | Required; user's local calendar date |
 | `target_calories` | NUMERIC(9,2) | Nonnegative |
 | `target_protein_g` | NUMERIC(9,2) | Nonnegative |
+| `target_carbohydrate_g` | NUMERIC(9,2) | Nonnegative |
 | `target_fat_g` | NUMERIC(9,2) | Nonnegative |
 | `created_at` | TIMESTAMPTZ | Required |
 | `updated_at` | TIMESTAMPTZ | Required |
@@ -86,6 +87,7 @@ One meal in a nutrition day. A meal is either quick-total or itemized. `entry_mo
 | `food_notes` | TEXT | Optional list/description for memory; not parsed or estimated |
 | `quick_calories` | NUMERIC(9,2) | Required/nonnegative in quick mode; null in itemized mode |
 | `quick_protein_g` | NUMERIC(9,2) | Required/nonnegative in quick mode; null in itemized mode |
+| `quick_carbohydrate_g` | NUMERIC(9,2) | Required/nonnegative in quick mode; null in itemized mode |
 | `quick_fat_g` | NUMERIC(9,2) | Required/nonnegative in quick mode; null in itemized mode |
 | `created_at` | TIMESTAMPTZ | Required |
 | `updated_at` | TIMESTAMPTZ | Required |
@@ -104,6 +106,7 @@ Optional itemized food rows for an itemized meal. Values describe that food's co
 | `position` | SMALLINT | Nonnegative; controls item order |
 | `calories` | NUMERIC(9,2) | Nonnegative |
 | `protein_g` | NUMERIC(9,2) | Nonnegative |
+| `carbohydrate_g` | NUMERIC(9,2) | Nonnegative |
 | `fat_g` | NUMERIC(9,2) | Nonnegative |
 | `created_at` | TIMESTAMPTZ | Required |
 | `updated_at` | TIMESTAMPTZ | Required |
@@ -218,6 +221,7 @@ For each `nutrition_day`:
 
 - `consumed_calories = Σ quick_calories for quick meals + Σ item calories for itemized meals`
 - `consumed_protein_g = Σ quick_protein_g for quick meals + Σ item protein_g for itemized meals`
+- `consumed_carbohydrate_g = Σ quick_carbohydrate_g for quick meals + Σ item carbohydrate_g for itemized meals`
 - `consumed_fat_g = Σ quick_fat_g for quick meals + Σ item fat_g for itemized meals`
 - `remaining = target - consumed`; negative remaining is displayed as amount over target.
 

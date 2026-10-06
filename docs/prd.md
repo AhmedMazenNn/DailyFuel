@@ -10,7 +10,7 @@
 
 ## 1. Product overview
 
-DailyFuel is a mobile-first nutrition tracking app. Its home page makes calories consumed versus the user's daily target the dominant element, with protein and fat shown as supporting counters. Users manually record meals and may optionally break a meal down into individual food items. A private progress area lets users record one body-weight measurement per week and add up to four progress photos for that week.
+DailyFuel is a mobile-first nutrition tracking app. Its home page makes calories consumed versus the user's daily target the dominant element, with protein, carbohydrates, and fat shown as supporting counters. Users manually record meals and may optionally break a meal down into individual food items. A private progress area lets users record one body-weight measurement per week and add up to four progress photos for that week.
 
 The experience should be modern, blue-gradient-led, responsive, and lightly gamified. Game elements reward consistent logging without judging what the user eats or whether they meet a particular body or nutrition outcome.
 
@@ -19,7 +19,7 @@ The experience should be modern, blue-gradient-led, responsive, and lightly gami
 ### Goals
 
 - Make today's calorie consumption and remaining calories understandable at a glance.
-- Track daily calories, protein, and fat against user-defined targets.
+- Track daily calories, protein, carbohydrates, and fat against user-defined targets.
 - Make logging a whole meal quick; offer optional per-food itemization.
 - Let users vary targets by date, including carb-cycling schedules, while carrying forward the previous day's targets by default.
 - Preserve historical logs and the target values that applied to each date.
@@ -42,7 +42,7 @@ Do not send meal names, food notes, macro values, body weight, or photo data to 
 
 - Accounts, profiles, and private user data.
 - Email/password registration and login, password recovery, and Google sign-in.
-- Manually entered daily calorie, protein, and fat targets.
+- Manually entered daily calorie, protein, carbohydrates, and fat targets.
 - Daily nutrition records with date-based history.
 - Meal logging in quick-total or optional itemized mode.
 - Home dashboard, meal creation/editing, history, and target editing.
@@ -55,7 +55,7 @@ Do not send meal names, food notes, macro values, body weight, or photo data to 
 ### Explicitly out of scope
 
 - Workout plans, exercise catalogs, workout logging, or training features.
-- Carbohydrate tracking or any other nutrient counters beyond calories, protein, and fat.
+- Nutrient counters beyond calories, protein, carbohydrates, and fat.
 - Shared food databases, barcode scanning, recipe databases, AI food recognition, or automatic nutrition estimates.
 - Automatic calorie/macro target recommendations.
 - Social feeds, public profiles, photo sharing, coaches, leaderboards, subscriptions, or payments.
@@ -106,12 +106,12 @@ Each meal belongs to exactly one user's nutrition day and has a name and display
 **Quick-total mode:**
 
 - The user may enter a text list/description of the foods eaten for memory.
-- The user enters the combined calories, protein, and fat for the entire meal.
+- The user enters the combined calories, protein, carbohydrates, and fat for the entire meal.
 - These values are included once in that day's totals.
 
 **Itemized mode:**
 
-- The user enters one or more food items, each with a name and its calories, protein, and fat.
+- The user enters one or more food items, each with a name and its calories, protein, carbohydrates, and fat.
 - The meal totals are calculated by summing its items.
 - Do not also count manually entered meal-level totals in itemized mode.
 
@@ -126,7 +126,7 @@ For the selected day:
 `consumed = sum of meal totals for that day`\
 `remaining = target - consumed`
 
-- Show consumed/target and remaining for calories, protein, and fat.
+- Show consumed/target and remaining for calories, protein, carbohydrates, and fat.
 - Calories receive the strongest visual emphasis on Home.
 - When remaining is negative, display the amount over target and preserve the actual consumed total.
 - Never clamp values, block additional logging, or use shaming language.
@@ -164,9 +164,9 @@ Users can register/login with email and password, reset their password, and sign
 
 ### FR-02 — Home dashboard
 
-Home opens to the current local date and prioritizes a prominent calorie progress visualization. It shows consumed calories, target, remaining/over amount, then smaller protein and fat counters. It shows meal cards and a clear Add Meal action. Users can select another date and access/edit that date's targets.
+Home opens to the current local date and prioritizes a prominent calorie progress visualization. It shows consumed calories, target, remaining/over amount, then smaller protein, carbohydrate, and fat counters. It shows meal cards and a clear Add Meal action. Users can select another date and access/edit that date's targets.
 
-**Acceptance:** Home reflects the selected date, displays no more than the three supported nutrition measures, updates after every meal mutation, and remains usable on narrow phone screens without horizontal scrolling.
+**Acceptance:** Home reflects the selected date, displays the four supported nutrition measures, updates after every meal mutation, and remains usable on narrow phone screens without horizontal scrolling.
 
 ### FR-03 — Meal management
 
@@ -201,14 +201,14 @@ Show logging XP, streak state, and milestone achievements without moving focus a
 ## 8. UX and screen requirements
 
 1. **Authentication:** sign in, create account, password reset, Google sign-in.
-2. **Onboarding:** language, timezone, weight unit, initial calorie/protein/fat targets.
-3. **Home:** calorie hero/progress, protein and fat support counters, selected date, meal list, Add Meal, subtle XP/streak summary.
+2. **Onboarding:** language, timezone, weight unit, initial calorie/protein/carbohydrate/fat targets.
+3. **Home:** calorie hero/progress, protein, carbohydrate, and fat support counters, selected date, meal list, Add Meal, subtle XP/streak summary.
 4. **Meal editor:** quick-total and itemized modes, food description/item list, macro inputs, save/cancel, validation.
 5. **History:** date/week navigation, daily totals, meals, target editing.
 6. **Progress:** weekly weight, private photos, up to four photos per week, weight chart, week comparison.
 7. **Profile/settings:** account, language, timezone, weight units, privacy/account actions.
 
-Use blue gradients as the primary visual identity with a restrained complementary accent. The design should feel playful and polished rather than childish. Calories must be visually dominant on Home; protein and fat are secondary. Make the Add Meal action reachable by thumb on mobile. Use non-color cues and labels for all charts and statuses.
+Use blue gradients as the primary visual identity with a restrained complementary accent. The design should feel playful and polished rather than childish. Calories must be visually dominant on Home; protein, carbohydrates, and fat are secondary. Make the Add Meal action reachable by thumb on mobile. Use non-color cues and labels for all charts and statuses.
 
 ## 9. API outline
 
@@ -255,7 +255,7 @@ Do not implement out-of-scope features. Keep product rules explicit in backend t
 
 - A user can sign in, configure targets, and see a calorie-first Home dashboard.
 - A user can quick-log a whole meal or itemize it without double-counting.
-- Calories, protein, and fat totals and remaining/over values are correct after create/edit/delete.
+- Calories, protein, carbohydrates, and fat totals and remaining/over values are correct after create/edit/delete.
 - Per-date targets carry forward by default and historical values remain unchanged unless explicitly edited.
 - Weight-only weeks work; photos are optional, private, limited to four per week, and associated with a single weekly weight.
 - English and Arabic flows work responsively, including RTL.
