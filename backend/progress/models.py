@@ -19,4 +19,4 @@ class WeeklyWeight(models.Model):
             models.UniqueConstraint(fields=["user", "week_start"], name="unique_user_weight_week"),
             models.CheckConstraint(condition=models.Q(weight_kg__gt=0), name="positive_weekly_weight"),
         ]
-        indexes = [models.Index(fields=["user", "-week_start"])]
+        indexes = [models.Index(fields=["user", "-week_start"], name="progress_we_user_id_1266ca_idx")]
