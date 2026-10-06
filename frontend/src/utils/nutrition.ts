@@ -1,13 +1,14 @@
 import type { Macros, Meal, Targets } from '../types/nutrition';
 import { round1 } from './format';
 
-export const ZERO_MACROS: Macros = { calories: 0, protein: 0, fat: 0 };
+export const ZERO_MACROS: Macros = { calories: 0, protein: 0, carbohydrate: 0, fat: 0 };
 
 export function sumMacros(list: Macros[]): Macros {
   return list.reduce<Macros>(
     (acc, m) => ({
       calories: round1(acc.calories + m.calories),
       protein: round1(acc.protein + m.protein),
+      carbohydrate: round1(acc.carbohydrate + m.carbohydrate),
       fat: round1(acc.fat + m.fat)
     }),
     ZERO_MACROS

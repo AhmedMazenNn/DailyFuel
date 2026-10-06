@@ -15,7 +15,7 @@ from .models import (Achievement, DailyLogReward, GamificationProfile, Idempoten
 DAILY_XP = 10
 LEVEL_XP = 100
 MILESTONES = (("first", 1), ("seven", 7), ("thirty", 30))
-KEYS = ("calories", "protein", "fat")
+KEYS = ("calories", "protein", "carbohydrate", "fat")
 
 
 def lock_user(user):
@@ -25,19 +25,18 @@ def lock_user(user):
 def inherited_targets(user, date):
     previous = NutritionDay.objects.filter(user=user, local_date__lt=date).first()
     if previous:
-        return dict(zip(KEYS, (previous.target_calories, previous.target_protein_g, previous.target_fat_g)))
+        return dict(zip(KEYS, (previous.target_calories, previous.target_protein_g, previous.target_carbohydrate_g, previous.target_fat_g)))
     profile = user.profile
     if not profile.onboarding_complete:
         raise ValidationError({"targets": ["Complete initial target setup first."]})
-    return dict(zip(KEYS, (profile.initial_calories, profile.initial_protein, profile.initial_fat)))
+    return dict(zip(KEYS, (profile.initial_calories, profile.initial_protein, profile.initial_carbohydrate, profile.initial_fat)))
 
 
 def get_day(user, date):
     day = NutritionDay.objects.filter(user=user, local_date=date).first()
     if day is None:
         values = inherited_targets(user, date)
-        day = NutritionDay.objects.create(user=user, local_date=date, target_calories=values["calories"],
-                                          target_protein_g=values["protein"], target_fat_g=values["fat"])
+        day = NutritionDay.objects.create(user=user, local_date=date, target_calories=values["calories"], target_protein_g=values["protein"], target_carbohydrate_g=values["carbohydrate"], target_fat_g=values["fat"])
     return day
 
 
@@ -47,10 +46,10 @@ def numbers(values):
 
 def meal_totals(meal, items):
     if meal.entry_mode == "quick":
-        totals = dict(zip(KEYS, (meal.quick_calories, meal.quick_protein_g, meal.quick_fat_g)))
+        totals = dict(zip(KEYS, (meal.quick_calories, meal.quick_protein_g, meal.quick_carbohydrate_g, meal.quick_fat_g)))
     else:
         totals = {key: sum((getattr(item, attr) for item in items), Decimal("0")) for key, attr in
-                  zip(KEYS, ("calories", "protein_g", "fat_g"))}
+                  zip(KEYS, ("calories", "protein_g", "carbohydrate_g", "fat_g"))}
     return totals
 
 
@@ -61,14 +60,14 @@ def meal_data(meal):
         "id": str(meal.pk), "date": meal.nutrition_day.local_date.isoformat(), "name": meal.name,
         "mode": meal.entry_mode, "note": meal.food_notes, "totals": numbers(totals),
         "items": [{"id": str(item.pk), "name": item.name, "position": item.position,
-                   **numbers(dict(zip(KEYS, (item.calories, item.protein_g, item.fat_g))))} for item in items],
+                   **numbers(dict(zip(KEYS, (item.calories, item.protein_g, item.carbohydrate_g, item.fat_g))))} for item in items],
         "createdAt": meal.created_at.isoformat(), "position": meal.position,
     }
 
 
 def day_data(user, date, day=None):
     day = day or NutritionDay.objects.filter(user=user, local_date=date).first()
-    targets = dict(zip(KEYS, (day.target_calories, day.target_protein_g, day.target_fat_g))) if day else inherited_targets(user, date)
+    targets = dict(zip(KEYS, (day.target_calories, day.target_protein_g, day.target_carbohydrate_g, day.target_fat_g))) if day else inherited_targets(user, date)
     records = list(day.meals.select_related("nutrition_day").prefetch_related("items")) if day else []
     meals = [meal_data(meal) for meal in records]
     values = [meal_totals(meal, list(meal.items.all())) for meal in records]
@@ -100,9 +99,9 @@ def save_meal(day, data, meal=None):
     if mode == "quick":
         totals = data.get("totals")
         if totals:
-            meal.quick_calories, meal.quick_protein_g, meal.quick_fat_g = (totals[k] for k in KEYS)
+            meal.quick_calories, meal.quick_protein_g, meal.quick_carbohydrate_g, meal.quick_fat_g = (totals[k] for k in KEYS)
     else:
-        meal.quick_calories = meal.quick_protein_g = meal.quick_fat_g = None
+        meal.quick_calories = meal.quick_protein_g = meal.quick_carbohydrate_g = meal.quick_fat_g = None
     meal.save()
     if mode == "quick":
         meal.items.all().delete()
@@ -116,7 +115,7 @@ def save_meal(day, data, meal=None):
             item = existing.get(entry.get("id")) or MealItem(meal=meal)
             item.position = position
             item.name = entry["name"]
-            item.calories, item.protein_g, item.fat_g = (entry[k] for k in KEYS)
+            item.calories, item.protein_g, item.carbohydrate_g, item.fat_g = (entry[k] for k in KEYS)
             item.save()
     reconcile_rewards(day.user)
     return meal

@@ -55,6 +55,7 @@ export function Home() {
             <CalorieHero ref={heroRef} date={selectedDate} consumed={totals.calories} target={targets.calories} onEditTargets={() => setTargetsOpen(true)} />
             <div className="grid grid-cols-2 gap-3">
               <MacroCard kind="protein" consumed={totals.protein} target={targets.protein} />
+              <MacroCard kind="carbohydrate" consumed={totals.carbohydrate} target={targets.carbohydrate} />
               <MacroCard kind="fat" consumed={totals.fat} target={targets.fat} />
             </div>
             {settings.showRewards && <GameStrip />}

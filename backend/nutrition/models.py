@@ -21,6 +21,7 @@ class NutritionDay(Record):
     local_date = models.DateField()
     target_calories = amount()
     target_protein_g = amount()
+    target_carbohydrate_g = amount(default=0)
     target_fat_g = amount()
     meal_sequence = models.PositiveIntegerField(default=0)
 
@@ -28,7 +29,7 @@ class NutritionDay(Record):
         ordering = ["-local_date"]
         constraints = [
             models.UniqueConstraint(fields=["user", "local_date"], name="nutrition_unique_day"),
-            models.CheckConstraint(condition=models.Q(target_calories__gte=0, target_protein_g__gte=0, target_fat_g__gte=0), name="nutrition_positive_targets"),
+            models.CheckConstraint(condition=models.Q(target_calories__gte=0, target_protein_g__gte=0, target_carbohydrate_g__gte=0, target_fat_g__gte=0), name="nutrition_positive_targets"),
         ]
 
 
@@ -40,6 +41,7 @@ class Meal(Record):
     food_notes = models.TextField(blank=True)
     quick_calories = amount(null=True)
     quick_protein_g = amount(null=True)
+    quick_carbohydrate_g = amount(null=True, default=None)
     quick_fat_g = amount(null=True)
 
     class Meta:
@@ -47,8 +49,8 @@ class Meal(Record):
         constraints = [
             models.UniqueConstraint(fields=["nutrition_day", "position"], name="nutrition_meal_position", deferrable=models.Deferrable.DEFERRED),
             models.CheckConstraint(condition=(
-                models.Q(entry_mode="quick", quick_calories__isnull=False, quick_protein_g__isnull=False, quick_fat_g__isnull=False, quick_calories__gte=0, quick_protein_g__gte=0, quick_fat_g__gte=0)
-                | models.Q(entry_mode="itemized", quick_calories__isnull=True, quick_protein_g__isnull=True, quick_fat_g__isnull=True)
+                models.Q(entry_mode="quick", quick_calories__isnull=False, quick_protein_g__isnull=False, quick_carbohydrate_g__isnull=False, quick_fat_g__isnull=False, quick_calories__gte=0, quick_protein_g__gte=0, quick_carbohydrate_g__gte=0, quick_fat_g__gte=0)
+                | models.Q(entry_mode="itemized", quick_calories__isnull=True, quick_protein_g__isnull=True, quick_carbohydrate_g__isnull=True, quick_fat_g__isnull=True)
             ), name="nutrition_meal_mode"),
         ]
 
@@ -59,13 +61,14 @@ class MealItem(Record):
     position = models.PositiveIntegerField()
     calories = amount()
     protein_g = amount()
+    carbohydrate_g = amount(default=0)
     fat_g = amount()
 
     class Meta:
         ordering = ["position", "created_at"]
         constraints = [
             models.UniqueConstraint(fields=["meal", "position"], name="nutrition_item_position", deferrable=models.Deferrable.DEFERRED),
-            models.CheckConstraint(condition=models.Q(calories__gte=0, protein_g__gte=0, fat_g__gte=0), name="nutrition_positive_items"),
+            models.CheckConstraint(condition=models.Q(calories__gte=0, protein_g__gte=0, carbohydrate_g__gte=0, fat_g__gte=0), name="nutrition_positive_items"),
         ]
 
 

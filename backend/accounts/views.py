@@ -17,7 +17,7 @@ def _profile(p):
     return {"name": p.display_name, "email": p.user.email, "language": p.locale, "weightUnit": p.weight_unit,
             "textSize": p.text_size, "reduceMotion": p.reduce_motion, "showRewards": p.show_rewards,
             "timezone": p.timezone, "onboardingComplete": p.onboarding_complete,
-            "initialTargets": {"calories": float(p.initial_calories), "protein": float(p.initial_protein), "fat": float(p.initial_fat)}}
+            "initialTargets": {"calories": float(p.initial_calories), "protein": float(p.initial_protein), "carbohydrate": float(p.initial_carbohydrate), "fat": float(p.initial_fat)}}
 
 def _session_payload(user):
     return {"user": {"id": str(user.pk), "email": user.email}, "profile": _profile(user.profile)}
@@ -66,7 +66,7 @@ def profile(request):
     for key, field in mapping.items():
         if key in request.data: setattr(p, field, request.data[key])
     targets = request.data.get("initialTargets") or {}
-    for key, field in (("calories","initial_calories"),("protein","initial_protein"),("fat","initial_fat")):
+    for key, field in (("calories","initial_calories"),("protein","initial_protein"),("carbohydrate","initial_carbohydrate"),("fat","initial_fat")):
         if key in targets: setattr(p, field, targets[key])
     try: p.full_clean(); p.save()
     except Exception as exc: return Response({"detail": str(exc)}, status=400)

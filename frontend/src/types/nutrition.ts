@@ -6,6 +6,7 @@ export type TextSize = 'default' | 'large';
 export interface Macros {
   calories: number;
   protein: number;
+  carbohydrate: number;
   fat: number;
 }
 

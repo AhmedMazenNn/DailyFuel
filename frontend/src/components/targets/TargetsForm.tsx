@@ -17,13 +17,13 @@ interface TargetsFormProps {
 
 export function TargetsForm({ idPrefix, initial, onSave, formId, hideSubmit, onSavingChange }: TargetsFormProps) {
   const { t } = useApp();
-  const [values, setValues] = useState({ calories: String(initial.calories), protein: String(initial.protein), fat: String(initial.fat) });
+  const [values, setValues] = useState({ calories: String(initial.calories), protein: String(initial.protein), carbohydrate: String(initial.carbohydrate), fat: String(initial.fat) });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [error,setError] = useState('');
 
   useEffect(() => {
-    setValues({ calories: String(initial.calories), protein: String(initial.protein), fat: String(initial.fat) });
+    setValues({ calories: String(initial.calories), protein: String(initial.protein), carbohydrate: String(initial.carbohydrate), fat: String(initial.fat) });
     setErrors({});
   }, [initial]);
 
@@ -55,6 +55,7 @@ export function TargetsForm({ idPrefix, initial, onSave, formId, hideSubmit, onS
       <NumberField id={`${idPrefix}-cal`} label={t('calories')} suffix={t('kcal')} value={values.calories} onChange={(v) => set('calories', v)} error={errors.calories} />
       <div className="grid grid-cols-2 gap-3">
         <NumberField id={`${idPrefix}-p`} label={t('protein')} suffix={t('g')} value={values.protein} onChange={(v) => set('protein', v)} error={errors.protein} />
+        <NumberField id={`${idPrefix}-c`} label={t('carbohydrate')} suffix={t('g')} value={values.carbohydrate} onChange={(v) => set('carbohydrate', v)} error={errors.carbohydrate} />
         <NumberField id={`${idPrefix}-f`} label={t('fat')} suffix={t('g')} value={values.fat} onChange={(v) => set('fat', v)} error={errors.fat} />
       </div>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}

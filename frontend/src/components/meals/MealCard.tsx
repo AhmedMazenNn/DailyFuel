@@ -37,6 +37,9 @@ export function MealCard({ meal, onEdit }: MealCardProps) {
         <span className="rounded-full bg-protein-soft px-2.5 py-1 text-protein-ink">
           {t('protein')} {fmt(meal.totals.protein, 1)} {t('g')}
         </span>
+        <span className="rounded-full bg-brand-50 px-2.5 py-1 text-brand-700">
+          {t('carbohydrate')} {fmt(meal.totals.carbohydrate, 1)} {t('g')}
+        </span>
         <span className="rounded-full bg-fat-soft px-2.5 py-1 text-fat-ink">
           {t('fat')} {fmt(meal.totals.fat, 1)} {t('g')}
         </span>
