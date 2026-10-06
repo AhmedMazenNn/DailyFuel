@@ -17,7 +17,9 @@ class MealSerializer(serializers.Serializer):
     mode = serializers.ChoiceField(choices=["quick", "itemized"], required=False)
     note = serializers.CharField(required=False, allow_blank=True, max_length=10000)
     totals = MacrosSerializer(required=False)
-    items = ItemSerializer(many=True, required=False, allow_empty=False, max_length=200)
+    # Quick meals intentionally send items=[]; itemized mode is validated in the service,
+    # where the mode transition and at-least-one-item rule are transactional.
+    items = ItemSerializer(many=True, required=False, allow_empty=True, max_length=200)
 
 
 class TargetsSerializer(serializers.Serializer):
