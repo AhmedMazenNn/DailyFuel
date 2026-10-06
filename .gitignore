@@ -1,0 +1,27 @@
+# Complete original design stays local; import per feature.
+/design-reference/
+/.worktrees/
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+dist/
+*.tsbuildinfo
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+test-results/
+playwright-report/
+.env
+.env.*
+!.env.example
+*.sqlite3
+*.sqlite3-*
+/backend/private-media/
+/backend/media/
+/backend/staticfiles/
+*.log
+.DS_Store
+.idea/
