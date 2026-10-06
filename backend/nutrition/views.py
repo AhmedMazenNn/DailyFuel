@@ -44,7 +44,7 @@ class DayView(PrivateView):
         lock_user(request.user)
         # Explicit target setup can create a day without inheritance.
         NutritionDay.objects.update_or_create(user=request.user, local_date=date, defaults={
-            "target_calories": values["calories"], "target_protein_g": values["protein"],
+            "target_calories": values["calories"], "target_protein_g": values["protein"], "target_carbohydrate_g": values["carbohydrate"],
             "target_fat_g": values["fat"]})
         return Response(day_data(request.user, date))
 

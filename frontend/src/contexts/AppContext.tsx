@@ -8,7 +8,7 @@ import {formatNumber,kgToUnit} from '../utils/format';
 import {translate,type TKey,type TVars} from '../utils/i18n';
 import type {Day,MealDraft,Settings,Targets,WeeklyRecord,ProgressPhoto} from '../types/nutrition';
 import type {Stats} from '../utils/gamification';
-const EMPTY={calories:0,protein:0,fat:0};
+const EMPTY={calories:0,protein:0,carbohydrate:0,fat:0};
 const initialStats:Stats={xp:0,level:1,levelXp:0,streak:0,best:0,loggedDays:0,earned:[]};
 function useAppValue(){
  const {session,setProfile,logout}=useAuth(); const settings=session!.profile!;

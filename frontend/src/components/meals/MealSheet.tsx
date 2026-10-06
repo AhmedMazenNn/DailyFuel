@@ -160,6 +160,7 @@ export function MealSheet({ open, onClose, date, meal }: MealSheetProps) {
             <NumberField id="q-cal" label={t('calories')} suffix={t('kcal')} value={form.calories} onChange={(v) => f.setField('calories', v)} error={errors.calories} />
             <div className="grid grid-cols-2 gap-3">
               <NumberField id="q-protein" label={t('protein')} suffix={t('g')} value={form.protein} onChange={(v) => f.setField('protein', v)} error={errors.protein} />
+              <NumberField id="q-carbohydrate" label={t('carbohydrate')} suffix={t('g')} value={form.carbohydrate} onChange={(v) => f.setField('carbohydrate', v)} error={errors.carbohydrate} />
               <NumberField id="q-fat" label={t('fat')} suffix={t('g')} value={form.fat} onChange={(v) => f.setField('fat', v)} error={errors.fat} />
             </div>
           </div> :
@@ -203,6 +204,7 @@ export function MealSheet({ open, onClose, date, meal }: MealSheetProps) {
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <NumberField compact id={`${item.id}-calories`} label={t('calories')} suffix={t('kcal')} value={item.calories} onChange={(v) => f.updateItem(item.id, 'calories', v)} error={errors[`${item.id}-calories`]} />
                     <NumberField compact id={`${item.id}-protein`} label={t('protein')} suffix={t('g')} value={item.protein} onChange={(v) => f.updateItem(item.id, 'protein', v)} error={errors[`${item.id}-protein`]} />
+                    <NumberField compact id={`${item.id}-carbohydrate`} label={t('carbohydrate')} suffix={t('g')} value={item.carbohydrate} onChange={(v) => f.updateItem(item.id, 'carbohydrate', v)} error={errors[`${item.id}-carbohydrate`]} />
                     <NumberField compact id={`${item.id}-fat`} label={t('fat')} suffix={t('g')} value={item.fat} onChange={(v) => f.updateItem(item.id, 'fat', v)} error={errors[`${item.id}-fat`]} />
                   </div>
                 </li>

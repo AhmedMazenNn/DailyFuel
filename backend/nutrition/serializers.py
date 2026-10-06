@@ -4,6 +4,7 @@ from rest_framework import serializers
 class MacrosSerializer(serializers.Serializer):
     calories = serializers.DecimalField(max_digits=9, decimal_places=2, min_value=0)
     protein = serializers.DecimalField(max_digits=9, decimal_places=2, min_value=0)
+    carbohydrate = serializers.DecimalField(max_digits=9, decimal_places=2, min_value=0, required=False, default=0)
     fat = serializers.DecimalField(max_digits=9, decimal_places=2, min_value=0)
 
 

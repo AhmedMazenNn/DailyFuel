@@ -3,13 +3,14 @@ import { useApp } from '../../contexts/AppContext';
 import { round1 } from '../../utils/format';
 
 interface MacroCardProps {
-  kind: 'protein' | 'fat';
+  kind: 'protein' | 'carbohydrate' | 'fat';
   consumed: number;
   target: number;
 }
 
 const STYLES = {
   protein: { bar: 'bg-protein', track: 'bg-protein-soft', ink: 'text-protein-ink' },
+  carbohydrate: { bar: 'bg-brand-500', track: 'bg-brand-50', ink: 'text-brand-700' },
   fat: { bar: 'bg-fat', track: 'bg-fat-soft', ink: 'text-fat-ink' }
 };
 

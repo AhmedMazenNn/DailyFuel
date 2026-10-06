@@ -8,6 +8,7 @@ export interface ItemDraft {
   name: string;
   calories: string;
   protein: string;
+  carbohydrate: string;
   fat: string;
 }
 
@@ -17,6 +18,7 @@ interface FormState {
   note: string;
   calories: string;
   protein: string;
+  carbohydrate: string;
   fat: string;
   items: ItemDraft[];
 }
@@ -24,19 +26,20 @@ interface FormState {
 type Errors = Record<string, string>;
 
 const str = (n: number) => String(n);
-const emptyItem = (): ItemDraft => ({ id: uid(), name: '', calories: '', protein: '', fat: '' });
+const emptyItem = (): ItemDraft => ({ id: uid(), name: '', calories: '', protein: '', carbohydrate: '', fat: '' });
 
 function initial(meal: Meal | null, defaultName: string): FormState {
-  if (!meal) return { name: defaultName, mode: 'quick', note: '', calories: '', protein: '', fat: '', items: [emptyItem()] };
+  if (!meal) return { name: defaultName, mode: 'quick', note: '', calories: '', protein: '', carbohydrate: '', fat: '', items: [emptyItem()] };
   return {
     name: meal.name,
     mode: meal.mode,
     note: meal.note,
     calories: String(meal.totals.calories),
     protein: str(meal.totals.protein),
+    carbohydrate: str(meal.totals.carbohydrate),
     fat: str(meal.totals.fat),
     items: meal.items.length ?
-    meal.items.map((i) => ({ id: i.id, name: i.name, calories: String(i.calories), protein: str(i.protein), fat: str(i.fat) })) :
+    meal.items.map((i) => ({ id: i.id, name: i.name, calories: String(i.calories), protein: str(i.protein), carbohydrate: str(i.carbohydrate), fat: str(i.fat) })) :
     [emptyItem()]
   };
 }
@@ -63,6 +66,7 @@ export function useMealForm(open: boolean, meal: Meal | null, defaultName: strin
     () => ({
       calories: round1(form.items.reduce((a, i) => a + safe(i.calories), 0)),
       protein: round1(form.items.reduce((a, i) => a + safe(i.protein), 0)),
+      carbohydrate: round1(form.items.reduce((a, i) => a + safe(i.carbohydrate), 0)),
       fat: round1(form.items.reduce((a, i) => a + safe(i.fat), 0))
     }),
     [form.items]
@@ -70,7 +74,7 @@ export function useMealForm(open: boolean, meal: Meal | null, defaultName: strin
 
   const clearError = (key: string) => setErrors((e) => e[key] ? { ...e, [key]: '' } : e);
 
-  const setField = useCallback((key: 'name' | 'note' | 'calories' | 'protein' | 'fat', value: string) => {
+  const setField = useCallback((key: 'name' | 'note' | 'calories' | 'protein' | 'carbohydrate' | 'fat', value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
     clearError(key);
   }, []);
@@ -86,6 +90,7 @@ export function useMealForm(open: boolean, meal: Meal | null, defaultName: strin
             mode,
             calories: String(itemTotals.calories),
             protein: str(itemTotals.protein),
+            carbohydrate: str(itemTotals.carbohydrate),
             fat: str(itemTotals.fat),
             note: f.note || f.items.filter((i) => i.name).map((i) => i.name).join(', ')
           };
@@ -125,9 +130,10 @@ export function useMealForm(open: boolean, meal: Meal | null, defaultName: strin
       const calories = checkNum('calories', form.calories, true);
       const protein = checkNum('protein', form.protein, false);
       const fat = checkNum('fat', form.fat, false);
+      const carbohydrate = checkNum('carbohydrate', form.carbohydrate, false);
       setErrors(errs);
       if (Object.keys(errs).length) return null;
-      return { name, mode: 'quick', note: form.note.trim(), totals: { calories, protein, fat }, items: [] };
+      return { name, mode: 'quick', note: form.note.trim(), totals: { calories, protein, carbohydrate, fat }, items: [] };
     }
 
     const filled = form.items.filter((i) => i.name.trim() || i.calories || i.protein || i.fat);
@@ -142,6 +148,7 @@ export function useMealForm(open: boolean, meal: Meal | null, defaultName: strin
         name: i.name.trim(),
         calories: checkNum(`${i.id}-calories`, i.calories, true),
         protein: checkNum(`${i.id}-protein`, i.protein, false),
+        carbohydrate: checkNum(`${i.id}-carbohydrate`, i.carbohydrate, false),
         fat: checkNum(`${i.id}-fat`, i.fat, false)
       };
     });
@@ -151,6 +158,7 @@ export function useMealForm(open: boolean, meal: Meal | null, defaultName: strin
     const totals = {
       calories: round1(items.reduce((a, i) => a + i.calories, 0)),
       protein: round1(items.reduce((a, i) => a + i.protein, 0)),
+      carbohydrate: round1(items.reduce((a, i) => a + i.carbohydrate, 0)),
       fat: round1(items.reduce((a, i) => a + i.fat, 0))
     };
     return { name, mode: 'itemized', note: '', totals, items };

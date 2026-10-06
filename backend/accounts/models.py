@@ -51,8 +51,9 @@ class Profile(models.Model):
     onboarding_complete = models.BooleanField(default=False)
     initial_calories = models.DecimalField(max_digits=9, decimal_places=2, default=0, validators=[MinValueValidator(Decimal("0"))])
     initial_protein = models.DecimalField(max_digits=9, decimal_places=2, default=0, validators=[MinValueValidator(Decimal("0"))])
+    initial_carbohydrate = models.DecimalField(max_digits=9, decimal_places=2, default=0, validators=[MinValueValidator(Decimal("0"))])
     initial_fat = models.DecimalField(max_digits=9, decimal_places=2, default=0, validators=[MinValueValidator(Decimal("0"))])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        constraints = [models.CheckConstraint(condition=models.Q(initial_calories__gte=0, initial_protein__gte=0, initial_fat__gte=0), name="profile_targets_nonnegative")]
+        constraints = [models.CheckConstraint(condition=models.Q(initial_calories__gte=0, initial_protein__gte=0, initial_carbohydrate__gte=0, initial_fat__gte=0), name="profile_targets_nonnegative")]
