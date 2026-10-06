@@ -15,7 +15,7 @@ class WeekPagination(PageNumberPagination):
 class WeeksView(APIView):
     def get(self, request):
         paginator = WeekPagination()
-        records = WeeklyWeight.objects.filter(user=request.user)
+        records = WeeklyWeight.objects.filter(user=request.user).prefetch_related("photos")
         page = paginator.paginate_queryset(records, request)
         return paginator.get_paginated_response([serialize_week(row) for row in page])
 
@@ -48,3 +48,67 @@ class WeightView(WeekView):
             },
         )
         return Response(serialize_week(record))
+
+
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404
+from django.utils.cache import patch_vary_headers
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from .models import ProgressPhoto
+from .serializers import PhotoInput, serialize_photo
+from .services import delete_photo, upload_photo
+from .storage import private_storage
+
+
+class PhotosView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request, week_start):
+        week = parse_week(week_start)
+        photos = ProgressPhoto.objects.filter(weight__user=request.user, weight__week_start=week)
+        return Response([serialize_photo(photo) for photo in photos])
+
+    def post(self, request, week_start):
+        week = parse_week(week_start)
+        today = local_today(request.user)
+        default = today if 0 <= (today - week).days < 7 else week
+        payload = PhotoInput(data=request.data, context={"week": week, "default_date": default})
+        payload.is_valid(raise_exception=True)
+        photo = upload_photo(request.user, week, payload.validated_data)
+        return Response(serialize_photo(photo), status=201)
+
+
+class PhotoView(APIView):
+    parser_classes = [JSONParser]
+
+    @transaction.atomic
+    def patch(self, request, photo_id):
+        get_object_or_404(get_user_model().objects.select_for_update(), pk=request.user.pk)
+        photo = get_object_or_404(ProgressPhoto.objects.select_related("weight"), pk=photo_id, weight__user=request.user)
+        payload = PhotoInput(data=request.data, partial=True, context={"week": photo.weight.week_start, "default_date": photo.captured_on})
+        payload.is_valid(raise_exception=True)
+        values = payload.validated_data
+        photo.label = values.get("label", photo.label)
+        photo.note = values.get("note", photo.note)
+        photo.captured_on = values["capturedOn"]
+        photo.save(update_fields=["label", "note", "captured_on", "updated_at"])
+        return Response(serialize_photo(photo))
+
+    def delete(self, request, photo_id):
+        delete_photo(request.user, photo_id)
+        return Response(status=204)
+
+
+class PhotoFileView(APIView):
+    def get(self, request, photo_id, thumbnail=False):
+        photo = get_object_or_404(ProgressPhoto, pk=photo_id, weight__user=request.user)
+        try:
+            file = private_storage().open(photo.thumbnail_key if thumbnail else photo.file_key, "rb")
+        except FileNotFoundError:
+            raise Http404
+        response = FileResponse(file, content_type="image/jpeg")
+        response["Cache-Control"] = "private, no-store, max-age=0"
+        response["X-Content-Type-Options"] = "nosniff"
+        response["Content-Disposition"] = 'inline; filename="progress.jpg"'
+        patch_vary_headers(response, ["Cookie"])
+        return response

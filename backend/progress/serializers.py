@@ -33,5 +33,30 @@ def serialize_week(record, week=None):
         "weightKg": float(record.weight_kg),
         "measuredOn": record.measured_on.isoformat(),
         "note": record.note,
-        "photos": [],
+        "photos": [serialize_photo(photo) for photo in record.photos.all()],
+    }
+
+
+class PhotoInput(serializers.Serializer):
+    image = serializers.FileField(required=True)
+    label = serializers.CharField(max_length=40, allow_blank=True, required=False)
+    note = serializers.CharField(max_length=500, allow_blank=True, required=False)
+    capturedOn = serializers.DateField(required=False)
+
+    def validate(self, attrs):
+        week = self.context["week"]
+        captured = attrs.get("capturedOn", self.context.get("default_date", week))
+        if not week <= captured <= week + timedelta(days=6):
+            raise serializers.ValidationError({"capturedOn": "Choose a capture date in the selected week."})
+        attrs["capturedOn"] = captured
+        return attrs
+
+
+def serialize_photo(photo):
+    return {
+        "id": str(photo.id),
+        "url": f"/api/v1/progress/photos/{photo.id}/file/",
+        "thumbnailUrl": f"/api/v1/progress/photos/{photo.id}/thumbnail/",
+        "label": photo.label, "note": photo.note,
+        "capturedOn": photo.captured_on.isoformat(),
     }

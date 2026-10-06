@@ -23,7 +23,7 @@ export function AppShell({ children }: {children: React.ReactNode;}) {
       <BottomNav />
       <Toaster
         position="top-center"
-        dir={dir}
+        dir={dir as 'ltr' | 'rtl'}
         offset={16}
         toastOptions={{
           className: 'font-sans !rounded-2xl !border-line !shadow-card'

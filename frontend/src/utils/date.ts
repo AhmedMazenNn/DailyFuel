@@ -5,6 +5,8 @@ export function localToday(timezone: string): string {
  return ['year','month','day'].map(key => parts.find(p => p.type === key)!.value).join('-');
 }
 
+export const TODAY = localToday(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
+
 export function parseISO(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d);
