@@ -8,6 +8,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Profile, User
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
 
 def _profile(p):
     return {"name": p.display_name, "email": p.user.email, "language": p.locale, "weightUnit": p.weight_unit,
@@ -67,3 +71,36 @@ def profile(request):
     try: p.full_clean(); p.save()
     except Exception as exc: return Response({"detail": str(exc)}, status=400)
     return Response(_profile(p))
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def auth_config(request):
+    from django.conf import settings
+    return Response({"googleEnabled": bool(settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET)})
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset(request):
+    email = str(request.data.get("email", "")).strip().lower()
+    user = User.objects.filter(email__iexact=email).first()
+    if user:
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        from django.conf import settings
+        link = f"{settings.FRONTEND_URL}/?uid={uid}&token={token}"
+        send_mail("DailyFuel password reset", f"Reset your password: {link}", settings.DEFAULT_FROM_EMAIL, [user.email])
+    return Response({"detail": "If the account exists, a reset link has been sent."})
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset_confirm(request):
+    try:
+        user = User.objects.get(pk=urlsafe_base64_decode(str(request.data.get("uid", ""))).decode())
+    except Exception:
+        return Response({"detail": "Invalid reset link."}, status=400)
+    if not default_token_generator.check_token(user, request.data.get("token", "")):
+        return Response({"detail": "Invalid or expired reset link."}, status=400)
+    password = str(request.data.get("password", ""))
+    if len(password) < 10: return Response({"password": ["Use at least 10 characters."]}, status=400)
+    user.set_password(password); user.save(update_fields=["password"])
+    return Response({"detail": "Password updated."})
