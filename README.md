@@ -53,4 +53,4 @@ git push -u origin feature/backend-foundation
 gh pr create --base dev --head feature/backend-foundation
 ```
 
-Use one Git worktree per concurrent terminal/agent. Never switch branches in a directory another agent is editing. The detailed workflow and feature roadmap are maintained on `dev`.
+Use one Git worktree per concurrent terminal/agent. Never switch branches in a directory another agent is editing. See the [terminal and agent workflow](docs/development-workflow.md) and [feature roadmap](docs/feature-roadmap.md).
