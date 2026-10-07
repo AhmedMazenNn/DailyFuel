@@ -47,3 +47,14 @@ WeeklyRecord `{weekStart,weightKg,measuredOn,note,photos:[{id,url,thumbnailUrl,l
 - GET `progress/photos/{id}/file/` and `thumbnail/`: private authenticated image responses.
 
 Backend progress app exposes durable media deletion jobs and cleanup management command. Account deletion uses progress cleanup service, never public media routes.
+
+## In-app administration
+
+All `/api/v1/admin/` endpoints require an authenticated, active superuser. Staff flags or frontend visibility do not grant access. Session CSRF protection and private/no-store response caching apply.
+
+- `GET admin/users/?search=&status=all&page=1`: paginated metadata (25 accounts per page), total filtered count, page/pages, and global total/active/inactive/administrator counts. Status accepts `all`, `active`, `inactive`, or `admin`; search matches name/email. Positive pages beyond the end clamp to the last page.
+- `GET admin/users/{id}/`: account identity/status/preferences, timestamps, opaque `version`, counts of meals/foods/weeks/photos, and the last 20 account administration log entries. Password hashes, photo keys/images, weights, and nutrition values are excluded.
+- `PATCH admin/users/{id}/`: requires the current `version`; accepts email, name, isActive, timezone, language, weightUnit, and optional `newPassword`. Unknown fields and privilege changes are rejected. Passwords use Django validation and are never returned/logged; self password changes preserve the current administrator session. Changed email addresses are normalized and synchronized with allauth without retaining verification from the previous address.
+- `DELETE admin/users/{id}/`: requires current `version` and `confirmationEmail` exactly matching the current email. Deletes the account's associated data via the durable private-photo cleanup service and records the administration action.
+
+Mutations lock account/profile rows and reject stale versions with HTTP 409. Invalid input or confirmation returns 400, unauthorized access 403, and missing accounts 404. Administrator deactivation/deletion and bulk deletion are unavailable. Administrator creation remains an operator task (`createsuperuser`).
