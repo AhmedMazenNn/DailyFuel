@@ -37,6 +37,7 @@ def credentials(data):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@csrf_protect
 def register(request):
     email, password = credentials(request.data)
     if len(password) < 10: return Response({"password": ["Use at least 10 characters."]}, status=400)
@@ -48,6 +49,7 @@ def register(request):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@csrf_protect
 def login_view(request):
     email, password = credentials(request.data)
     user = authenticate(request, email=email, password=password)
@@ -80,6 +82,7 @@ def auth_config(request):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@csrf_protect
 def password_reset(request):
     email = str(request.data.get("email", "")).strip().lower()
     user = User.objects.filter(email__iexact=email).first()
@@ -93,6 +96,7 @@ def password_reset(request):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@csrf_protect
 def password_reset_confirm(request):
     try:
         user = User.objects.get(pk=urlsafe_base64_decode(str(request.data.get("uid", ""))).decode())
