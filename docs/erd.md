@@ -256,3 +256,11 @@ Do not persist these as independently mutable values. They may be cached only if
 8. Every media read and mutation checks ownership.
 9. Daily rewards and achievements are idempotent.
 10. Changing display weight unit never changes normalized stored kilograms.
+
+## Weekly email reminder records
+
+- `ReminderPreference`: one-to-one user (cascade); enabled flag, weekday 0–6, local time, include-photos flag, confirmed email/time, confirmation and unsubscribe nonces, last confirmation request time, next due timestamp, and cached schedule timezone. The authoritative timezone lives on Profile.
+- `ReminderDelivery`: user FK (cascade), Monday local week, recipient, status, attempts, claim/sent/retry timestamps. Unique `(user, week_start)` reserves one weekly delivery decision. Rejections may reuse this record for up to three attempts; uncertain outcomes are never automatically retried.
+- `ReminderDailyBudget`: UTC date primary key and aggregate reserved attempt count. It contains no individual user data and survives account deletion.
+
+Consent changes, reservation, and sending checks use a consistent user → preference → delivery lock order. Daily budget reservations are transactional; external email acceptance cannot be atomic with database writes. See [reminder design and operations](weekly-email-reminders.md).

@@ -7,6 +7,7 @@ import { TODAY } from '../utils/date';
 import { inputBase, inputBorder, secondaryButton } from '../utils/styles';
 import type { Language, TextSize, WeightUnit } from '../types/nutrition';
 import { BadgeGrid } from '../components/profile/BadgeGrid';
+import { WeeklyEmailSettings } from '../components/profile/WeeklyEmailSettings';
 import { SettingsSection } from '../components/profile/SettingsSection';
 import { TargetsForm } from '../components/targets/TargetsForm';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -97,6 +98,7 @@ export function Profile() {
         </div>
 
         <div className="space-y-4">
+          <WeeklyEmailSettings />
           {settings.showRewards &&
           <SettingsSection id="s-badges" title={t('badges')} hint={t('badgesHint')}>
               <BadgeGrid />
