@@ -23,7 +23,7 @@ DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = os.getenv(
 ).lower() == "true"
 if DATABASES["default"]["ENGINE"] != "django.db.backends.postgresql":
     raise ImproperlyConfigured("DailyFuel requires PostgreSQL.")
-INSTALLED_APPS = ["django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles", "rest_framework", "accounts.apps.AccountsConfig", "nutrition", "progress", "allauth", "allauth.account", "allauth.socialaccount", "allauth.socialaccount.providers.google"]
+INSTALLED_APPS = ["django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles", "rest_framework", "accounts.apps.AccountsConfig", "nutrition", "progress", "notifications", "allauth", "allauth.account", "allauth.socialaccount", "allauth.socialaccount.providers.google"]
 MIDDLEWARE = ["django.middleware.security.SecurityMiddleware", "whitenoise.middleware.WhiteNoiseMiddleware", "config.middleware.PrivateResponseMiddleware", "django.contrib.sessions.middleware.SessionMiddleware", "django.middleware.common.CommonMiddleware", "django.middleware.csrf.CsrfViewMiddleware", "django.contrib.auth.middleware.AuthenticationMiddleware", "allauth.account.middleware.AccountMiddleware", "django.contrib.messages.middleware.MessageMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware"]
 ROOT_URLCONF = "config.urls"
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [], "APP_DIRS": True, "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages"]}}]
@@ -96,3 +96,7 @@ LOGOUT_REDIRECT_URL = FRONTEND_URL
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 SOCIALACCOUNT_PROVIDERS = {"google": {"SCOPE": ["profile", "email"], "AUTH_PARAMS": {"access_type": "online"}, "APP": {"client_id": GOOGLE_CLIENT_ID, "secret": GOOGLE_CLIENT_SECRET, "key": ""}}}
+
+# Opt-in weekly email delivery stays disabled until the provider/scheduler are configured.
+WEEKLY_EMAIL_ENABLED = os.getenv("WEEKLY_EMAIL_ENABLED", "false").lower() == "true"
+WEEKLY_EMAIL_DAILY_LIMIT = int(os.getenv("WEEKLY_EMAIL_DAILY_LIMIT", "200"))

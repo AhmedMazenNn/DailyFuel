@@ -2,6 +2,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { LoadingScreen } from './components/ui/LoadingScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Auth } from './pages/Auth';
+import { EmailReminderAction } from './pages/EmailReminderAction';
 import { AppProvider } from './contexts/AppContext';
 import { AppShell } from './components/layout/AppShell';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -29,6 +30,8 @@ const Admin = lazy(() => import('./pages/Admin').then(module => ({ default: modu
 
 function Application() {
   const { session, error, refresh } = useAuth();
+  if (window.location.pathname === "/email-preferences/confirm") return <EmailReminderAction action="confirm" />;
+  if (window.location.pathname === "/email-preferences/unsubscribe") return <EmailReminderAction action="unsubscribe" />;
   if (error) return <main className="p-8"><p role="alert">{error}</p><button onClick={() => void refresh()}>Retry</button></main>;
   if (!session) return <LoadingScreen />;
   if (!session.user) return <Auth />;

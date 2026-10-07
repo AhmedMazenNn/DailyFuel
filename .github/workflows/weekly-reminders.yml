@@ -1,0 +1,64 @@
+name: Weekly email reminders
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Inspect due reminders without sending email or changing records
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-weekly-email
+  cancel-in-progress: false
+
+jobs:
+  reminders:
+    # Manual dry runs are available before enabling the hourly schedule.
+    if: github.ref == 'refs/heads/main' && (vars.WEEKLY_EMAIL_ENABLED == 'true' || (github.event_name == 'workflow_dispatch' && inputs.dry_run))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DEBUG: 'false'
+      SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_DISABLE_SERVER_SIDE_CURSORS: 'true'
+      EMAIL_BACKEND: accounts.email_backend.BrevoEmailBackend
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      DEFAULT_FROM_EMAIL: ${{ vars.DEFAULT_FROM_EMAIL }}
+      FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+      WEEKLY_EMAIL_ENABLED: 'true'
+      WEEKLY_EMAIL_DAILY_LIMIT: ${{ vars.WEEKLY_EMAIL_DAILY_LIMIT || '200' }}
+      EMAIL_TIMEOUT: '15'
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check required configuration
+        shell: bash
+        run: |
+          for setting in SECRET_KEY DATABASE_URL BREVO_API_KEY DEFAULT_FROM_EMAIL FRONTEND_URL; do
+            if [[ -z "${!setting}" ]]; then
+              echo "Missing configuration: $setting"
+              exit 1
+            fi
+          done
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: python -m pip install -r backend/requirements.txt
+      - name: Process weekly reminders
+        working-directory: backend
+        shell: bash
+        run: |
+          if [[ "$DRY_RUN" == 'true' ]]; then
+            python manage.py send_weekly_reminders --dry-run --limit 25
+          else
+            python manage.py send_weekly_reminders --limit 25
+          fi
