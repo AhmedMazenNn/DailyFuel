@@ -1,6 +1,11 @@
 import type { Language } from '../types/nutrition';
 
 const en = {
+  foodEditingBadge: 'Editing now',
+  foodEditingHint: 'Changes apply to this saved food. Previously logged meals stay unchanged.',
+  foodEditingTitle: 'Edit {name}',
+  foodAddTitle: 'Add a saved food',
+  foodSaving: 'Saving…',
   savedFoodAdd: "Add saved food",
   savedFoodChoose: "Choose a food",
   savedFoodAmount: "Amount eaten (g)",
@@ -191,6 +196,11 @@ const en = {
 export type TKey = keyof typeof en;
 
 const ar: Record<TKey, string> = {
+  foodEditingBadge: 'قيد التعديل',
+  foodEditingHint: 'التغييرات تخص هذا الطعام المحفوظ. لن تتغير الوجبات المسجلة سابقًا.',
+  foodEditingTitle: 'تعديل {name}',
+  foodAddTitle: 'إضافة طعام محفوظ',
+  foodSaving: 'جارٍ الحفظ…',
   savedFoodAdd: "إضافة طعام محفوظ",
   savedFoodChoose: "اختر طعامًا",
   savedFoodAmount: "الكمية المتناولة (جم)",

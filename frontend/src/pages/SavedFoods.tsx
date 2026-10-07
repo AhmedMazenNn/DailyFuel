@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { PlusIcon, SearchIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { PlusIcon, SearchIcon, PencilIcon, CheckIcon } from "lucide-react";
 import { json, request } from "../utils/api";
 import { useApp } from "../contexts/AppContext";
 import type { SavedFood } from "../types/nutrition";
@@ -16,6 +16,10 @@ const blank = {
 };
 export function SavedFoods() {
   const { t, fmt } = useApp();
+  const formRef = useRef<HTMLFormElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const [editingName, setEditingName] = useState("");
+  const [saving, setSaving] = useState(false);
   const [foods, setFoods] = useState<SavedFood[]>([]);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState<typeof blank>(blank);
@@ -32,6 +36,8 @@ export function SavedFoods() {
   }, [search]);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     setError("");
     try {
       const body = {
@@ -51,10 +57,25 @@ export function SavedFoods() {
       await load();
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setSaving(false);
     }
   };
   const edit = (food: SavedFood) => {
     setEditing(food.id);
+    setEditingName(food.name);
+    setError("");
+    formRef.current?.scrollIntoView({
+      behavior:
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+        document.documentElement.dataset.reduceMotion === "true"
+          ? "instant"
+          : "smooth",
+      block: "start",
+    });
+    requestAnimationFrame(() =>
+      nameRef.current?.focus({ preventScroll: true }),
+    );
     setForm({
       name: food.name,
       brand: food.brand,
@@ -100,11 +121,28 @@ export function SavedFoods() {
       </header>
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <form
+          ref={formRef}
           onSubmit={submit}
-          className="rounded-3xl bg-white p-5 shadow-card ring-1 ring-line"
+          aria-labelledby="food-form-title"
+          className={`scroll-mt-6 rounded-3xl bg-white p-5 shadow-card ring-2 transition-colors ${editing ? "ring-brand-400" : "ring-line"}`}
         >
-          <h2 className="text-lg font-bold">
-            {editing ? "Edit food" : "Add food"}
+          {editing && (
+            <div
+              role="status"
+              className="mb-4 rounded-2xl bg-brand-50 p-3 text-brand-700"
+            >
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide">
+                <PencilIcon className="h-4 w-4" aria-hidden />
+                {t("foodEditingBadge")}
+              </div>
+              <p className="mt-1 font-semibold">{editingName}</p>
+              <p className="mt-1 text-xs">{t("foodEditingHint")}</p>
+            </div>
+          )}
+          <h2 id="food-form-title" className="text-lg font-bold">
+            {editing
+              ? t("foodEditingTitle", { name: editingName })
+              : t("foodAddTitle")}
           </h2>
           <div className="mt-4 space-y-3">
             {(
@@ -125,6 +163,8 @@ export function SavedFoods() {
               >
                 {label}
                 <input
+                  ref={key === "name" ? nameRef : undefined}
+                  disabled={saving}
                   required={
                     key === "name" ||
                     key.includes("serving_amount") ||
@@ -151,9 +191,17 @@ export function SavedFoods() {
               {error}
             </p>
           )}
-          <button className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 font-bold text-white">
-            {editing ? (
-              t("savedFoodSave")
+          <button
+            disabled={saving}
+            className="disabled:opacity-60 mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 font-bold text-white"
+          >
+            {saving ? (
+              t("foodSaving")
+            ) : editing ? (
+              <>
+                <CheckIcon className="h-4 w-4" aria-hidden />
+                {t("savedFoodSave")}
+              </>
             ) : (
               <>
                 <PlusIcon className="h-4 w-4" />
@@ -164,6 +212,7 @@ export function SavedFoods() {
           {editing && (
             <button
               type="button"
+              disabled={saving}
               onClick={() => {
                 setEditing(null);
                 setForm(blank);
@@ -190,11 +239,17 @@ export function SavedFoods() {
             {foods.map((food) => (
               <article
                 key={food.id}
-                className="rounded-3xl bg-white p-4 shadow-card ring-1 ring-line"
+                className={`rounded-3xl bg-white p-4 shadow-card ring-2 transition-colors ${editing === food.id ? "ring-brand-400" : "ring-line"}`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="font-bold text-ink">{food.name}</h2>
+                    {editing === food.id && (
+                      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-1 text-xs font-bold text-brand-700">
+                        <PencilIcon className="h-3 w-3" aria-hidden />
+                        {t("foodEditingBadge")}
+                      </span>
+                    )}
                     {food.brand && (
                       <p className="text-sm text-ink-soft">{food.brand}</p>
                     )}
@@ -209,12 +264,15 @@ export function SavedFoods() {
                   </div>
                   <div className="flex gap-2">
                     <button
+                      disabled={saving}
+                      aria-pressed={editing === food.id}
                       onClick={() => edit(food)}
                       className="rounded-xl px-3 py-2 text-sm font-semibold text-brand-700 ring-1 ring-line"
                     >
                       {t("savedFoodEdit")}
                     </button>
                     <button
+                      disabled={saving}
                       onClick={() => void archive(food.id)}
                       aria-label={`Delete ${food.name}`}
                       className="rounded-xl p-2 text-ink-soft ring-1 ring-line"
