@@ -37,21 +37,15 @@ The blueprint generates `SECRET_KEY`, enables production security, and configure
 
 If you use **New → Web Service** instead, use branch `main`, root directory `backend`, Python runtime, free plan, build `bash build.sh`, start `bash start.sh`, and health path `/api/v1/health/`. Copy every environment setting from `render.yaml`; generate a strong persistent `SECRET_KEY` yourself.
 
-After deployment, open `https://YOUR-SERVICE.onrender.com/api/v1/health/`; expect `{"status":"ok"}`. Save this backend origin for Vercel.
+After deployment, open `https://YOUR-SERVICE.onrender.com/api/v1/health/`; expect `{"status":"ok"}`. If this differs from `https://dailyfuel-4jtm.onrender.com`, update the backend destinations in `frontend/vercel.json` before deploying Vercel.
 
 ## 3. Deploy Vercel
 
 Import the same GitHub repository. Set production branch `main`, root directory **`frontend`**, framework **Vite**, build command `npm run build`, and output directory `dist`.
 
-Before deploying, add the environment variable:
+The committed `frontend/vercel.json` points to `https://dailyfuel-4jtm.onrender.com` and proxies API, authentication, admin, and static requests to Render, supplies SPA routing, and disables caching of private responses. Cookies remain on the frontend origin; no cross-site cookie setup is required.
 
-```text
-BACKEND_URL=https://YOUR-SERVICE.onrender.com
-```
-
-Use only the HTTPS origin, with no `/api` suffix. The committed `frontend/vercel.ts` proxies API, authentication, admin, and static requests to Render, supplies SPA routing, and disables caching of private responses. Cookies remain on the frontend origin; no cross-site cookie setup is required.
-
-After Vercel assigns the actual production URL, update Render's `FRONTEND_URL` to that exact origin and redeploy Render. If you change `BACKEND_URL`, redeploy Vercel. Vercel preview domains are not automatically trusted for authentication; use the configured production domain for verification.
+After Vercel assigns the actual production URL, update Render's `FRONTEND_URL` to that exact origin and redeploy Render. If your Render hostname changes, update the destinations in `frontend/vercel.json` and redeploy Vercel. Vercel preview domains are not automatically trusted for authentication; use the configured production domain for verification.
 
 For optional Google sign-in, add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in Render. In Google OAuth configuration, use your Vercel origin as the authorized JavaScript origin and `https://YOUR-FRONTEND.vercel.app/accounts/google/login/callback/` as the redirect URI. Restart Render after setting the credentials.
 
