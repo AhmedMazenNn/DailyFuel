@@ -261,3 +261,9 @@ Do not implement out-of-scope features. Keep product rules explicit in backend t
 - English and Arabic flows work responsively, including RTL.
 - Gamification rewards logging actions only, is idempotent, and does not punish missed days.
 - Access-control and business-rule checks pass; setup and deployment configuration are documented.
+
+## 13. Opt-in weekly email check-ins
+
+Users can opt in from Profile, choose a weekday/time in an IANA timezone, and include an optional photo reminder. Confirm mailbox ownership before sending weekly reminders. Confirmation and unsubscribe links require an explicit action, work without sign-in, and never change preferences merely on GET.
+
+Acceptance criteria: reminders default off; scheduling respects local weeks and daylight saving; completed weekly check-ins suppress reminders; English and Arabic messages contain no private photos or health values; disabling, deactivation, email changes, and account deletion stop delivery. Concurrent workers cannot duplicate a weekly accepted/uncertain attempt. Provider failures have bounded safe retries, a daily cap, aggregate diagnostics, and a documented free-tier setup. The operator must enable delivery after configuration; timing is best effort.

@@ -7,6 +7,14 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.mail.backends.base import BaseEmailBackend
 
 
+class EmailDeliveryRejected(RuntimeError):
+    """Provider explicitly rejected the request before acceptance."""
+
+
+class EmailDeliveryUncertain(RuntimeError):
+    """Transport/server failure: provider acceptance cannot be determined."""
+
+
 class BrevoEmailBackend(BaseEmailBackend):
     def send_messages(self, email_messages):
         if not settings.BREVO_API_KEY:
@@ -32,6 +40,7 @@ class BrevoEmailBackend(BaseEmailBackend):
                     payload["htmlContent"] = alternative[0]
             if message.reply_to:
                 payload["replyTo"] = {"email": parseaddr(message.reply_to[0])[1]}
+            response = None
             try:
                 response = requests.post(
                     "https://api.brevo.com/v3/smtp/email",
@@ -39,10 +48,12 @@ class BrevoEmailBackend(BaseEmailBackend):
                     json=payload, timeout=settings.EMAIL_TIMEOUT,
                 )
                 response.raise_for_status()
-            except requests.RequestException:
+            except requests.RequestException as error:
                 if not self.fail_silently:
                     # Do not include provider responses, reset links, or credentials in errors.
-                    raise RuntimeError("Transactional email delivery failed.") from None
+                    rejected = isinstance(error, requests.HTTPError) and response is not None and 400 <= response.status_code < 500
+                    failure = EmailDeliveryRejected if rejected else EmailDeliveryUncertain
+                    raise failure("Transactional email delivery failed.") from None
             else:
                 sent += 1
         return sent

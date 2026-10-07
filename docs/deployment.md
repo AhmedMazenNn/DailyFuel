@@ -1,5 +1,7 @@
 # Deploy DailyFuel: Render + Neon + Vercel
 
+For opt-in weekly emails, follow [the Brevo and GitHub Actions setup guide](weekly-email-reminders.md).
+
 Deploy from `main`. The backend runs on Render's free web service, PostgreSQL stays in your existing Neon project, and Vercel serves the frontend. Photos require persistent **private** object storage; Render's free filesystem is temporary.
 
 ## 1. Prepare private photos and password-reset email
