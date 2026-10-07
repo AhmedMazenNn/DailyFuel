@@ -14,6 +14,10 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://dailyfuel:dailyfuel@localhost:5432/dailyfuel")
 DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=60)}
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = os.getenv(
+    "DATABASE_DISABLE_SERVER_SIDE_CURSORS", "false"
+).lower() == "true"
 if DATABASES["default"]["ENGINE"] != "django.db.backends.postgresql":
     raise ImproperlyConfigured("DailyFuel requires PostgreSQL.")
 INSTALLED_APPS = ["django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles", "rest_framework", "accounts.apps.AccountsConfig", "nutrition", "progress", "allauth", "allauth.account", "allauth.socialaccount", "allauth.socialaccount.providers.google"]
