@@ -65,6 +65,25 @@ class NutritionTests(TransactionTestCase):
         self.client.delete(meal_url)
         self.assertEqual(self.post().data["name"], "Meal 3")
 
+    def test_itemized_create_and_edit_with_new_and_saved_items(self):
+        food = {"name": "Rice", "calories": "130.50", "protein": "2.50", "fat": "0.30"}
+        created = self.post({"mode": "itemized", "items": [food]})
+        self.assertEqual(created.status_code, 201)
+        saved = created.data["items"][0]
+        meal_url = f"/api/v1/meals/{created.data['id']}/"
+        edited = self.client.patch(meal_url, {"items": [
+            {**food, "name": "Egg", "calories": "70.25"},
+            {**saved, "calories": "150.00"},
+        ]}, format="json")
+        self.assertEqual(edited.status_code, 200)
+        self.assertEqual(edited.data["items"][1]["id"], saved["id"])
+        self.assertNotEqual(edited.data["items"][0]["id"], saved["id"])
+        self.assertEqual(edited.data["totals"]["calories"], 220.25)
+        self.assertEqual(self.client.get(self.url).data["totals"]["calories"], 220.25)
+        duplicate = self.client.patch(meal_url, {"items": [saved, saved]}, format="json")
+        self.assertEqual(duplicate.status_code, 400)
+        self.assertEqual(self.client.get(meal_url).data["items"], edited.data["items"])
+
     def test_owner_scope_and_history(self):
         meal = self.post().data
         other = get_user_model().objects.create_user(email="other@example.com", password="SecureTest123!")
