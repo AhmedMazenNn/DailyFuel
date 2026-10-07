@@ -7,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from .models import IdempotencyRecord, Meal, MealItem, NutritionDay
-from .serializers import ItemSerializer, MealSerializer, OrderSerializer, TargetsSerializer
+from .models import IdempotencyRecord, Meal, MealItem, NutritionDay, SavedFood
+from .serializers import ItemSerializer, MealSerializer, OrderSerializer, TargetsSerializer, SavedFoodSerializer, SavedFoodUseSerializer
 from .services import (KEYS, day_data, get_day, lock_user, meal_data, numbers,
                        reconcile_rewards, reorder, retry_record, save_meal)
 
@@ -153,6 +153,63 @@ class ItemView(PrivateView):
             raise ValidationError({"items": ["An itemized meal must retain at least one item; delete the meal instead."]})
         item.delete()
         return Response(status=204)
+
+
+class SavedFoodListView(PrivateView):
+    def get(self, request):
+        foods = SavedFood.objects.filter(user=request.user, is_archived=False)
+        query = request.query_params.get("search", "").strip()
+        if query:
+            foods = foods.filter(name__icontains=query)
+        return Response(SavedFoodSerializer(foods, many=True).data)
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = SavedFoodSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(SavedFoodSerializer(SavedFood.objects.create(user=request.user, **serializer.validated_data)).data, status=201)
+
+
+class SavedFoodDetailView(PrivateView):
+    def owned(self, request, pk):
+        return get_object_or_404(SavedFood, pk=pk, user=request.user)
+
+    def get(self, request, pk):
+        return Response(SavedFoodSerializer(self.owned(request, pk)).data)
+
+    @transaction.atomic
+    def patch(self, request, pk):
+        food = self.owned(request, pk)
+        serializer = SavedFoodSerializer(food, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True); serializer.save()
+        return Response(SavedFoodSerializer(food).data)
+
+    @transaction.atomic
+    def delete(self, request, pk):
+        food = self.owned(request, pk)
+        food.is_archived = True; food.save(update_fields=["is_archived", "updated_at"])
+        return Response(status=204)
+
+
+class SavedFoodItemView(PrivateView):
+    @transaction.atomic
+    def post(self, request, pk):
+        data = validated(SavedFoodUseSerializer, request.data)
+        lock_user(request.user)
+        meal = get_object_or_404(Meal.objects.select_related("nutrition_day"), pk=pk, nutrition_day__user=request.user)
+        if meal.entry_mode != "itemized":
+            raise ValidationError({"mode": ["Saved foods require an itemized meal."]})
+        food = get_object_or_404(SavedFood, pk=data["saved_food_id"], user=request.user, is_archived=False)
+        if data["amount_g"] <= 0:
+            raise ValidationError({"amount_g": ["Must be greater than zero."]})
+        multiplier = data["amount_g"] / food.serving_amount_g
+        last = meal.items.order_by("-position").first()
+        item = MealItem.objects.create(meal=meal, saved_food=food, source_type="saved_food", name=food.name,
+            position=last.position + 1 if last else 0, amount_g=data["amount_g"], serving_amount_snapshot_g=food.serving_amount_g,
+            calories=food.calories_per_serving * multiplier, protein_g=food.protein_g_per_serving * multiplier,
+            fat_g=food.fat_g_per_serving * multiplier, carbohydrate_g=(food.carbs_g_per_serving or 0) * multiplier,
+            carbs_g=(food.carbs_g_per_serving * multiplier if food.carbs_g_per_serving is not None else None))
+        return Response(meal_data(meal), status=201)
 
 
 class ItemOrderView(MealView):

@@ -16,13 +16,17 @@ interface MealSheetProps {
 }
 
 export function MealSheet({ open, onClose, date, meal }: MealSheetProps) {
-  const { t, fmt, days, addMeal, updateMeal, deleteMeal, formatLong } = useApp();
+  const { t, fmt, days, addMeal, updateMeal, deleteMeal, formatLong, listSavedFoods, addSavedFood } = useApp();
   const defaultName = t('mealN', {n: days[date]?.nextMealNumber ?? 1});
   const key = useRef(crypto.randomUUID());
   const f = useMealForm(open, meal, defaultName);
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [savedFoods, setSavedFoods] = useState<{id:string;name:string;serving_amount_g:number;calories_per_serving:number;protein_g_per_serving:number;fat_g_per_serving:number}[]>([]);
+  const [savedFoodId, setSavedFoodId] = useState(''); const [amountG, setAmountG] = useState(''); const [addingSaved, setAddingSaved] = useState(false);
+  const loadFoods = async () => { try { setSavedFoods(await listSavedFoods()); } catch (e) { setSaveError((e as Error).message); } };
+  const addSaved = async () => { if (!meal || !savedFoodId || !amountG) return; setAddingSaved(true); try { await addSavedFood(meal.id, date, savedFoodId, amountG); setSavedFoodId(''); setAmountG(''); } catch (e) { setSaveError((e as Error).message); } finally { setAddingSaved(false); } };
 
   const close = () => {
     setConfirming(false);
@@ -218,6 +222,7 @@ export function MealSheet({ open, onClose, date, meal }: MealSheetProps) {
               <PlusIcon className="h-4 w-4" aria-hidden />
               {t('addItem')}
             </button>
+            {meal && <div className="rounded-2xl border border-brand-100 bg-brand-50 p-3"><button type="button" onClick={()=>void loadFoods()} className="text-sm font-bold text-brand-800">Add saved food</button>{savedFoods.length>0&&<div className="mt-2 grid gap-2"><select aria-label="Saved food" value={savedFoodId} onChange={e=>setSavedFoodId(e.target.value)} className="h-11 rounded-xl border border-line bg-white px-3"><option value="">Choose a food</option>{savedFoods.map(food=><option key={food.id} value={food.id}>{food.name} · {food.serving_amount_g} g · {food.calories_per_serving} kcal</option>)}</select><div className="flex gap-2"><input aria-label="Amount eaten in grams" type="number" min="0.01" step="0.01" placeholder="Amount eaten (g)" value={amountG} onChange={e=>setAmountG(e.target.value)} className="h-11 min-w-0 flex-1 rounded-xl border border-line px-3"/><button type="button" disabled={addingSaved||!savedFoodId||!amountG} onClick={()=>void addSaved()} className="rounded-xl bg-brand-600 px-3 text-sm font-bold text-white disabled:opacity-50">Add</button></div></div>}</div>}
           </div>
         }
       </form>

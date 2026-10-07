@@ -57,12 +57,17 @@ class Meal(Record):
 
 class MealItem(Record):
     meal = models.ForeignKey(Meal, related_name="items", on_delete=models.CASCADE)
+    saved_food = models.ForeignKey("SavedFood", null=True, blank=True, on_delete=models.SET_NULL, related_name="meal_items")
+    source_type = models.CharField(max_length=20, choices=[("manual", "Manual"), ("saved_food", "Saved food")], default="manual")
     name = models.CharField(max_length=120)
+    amount_g = amount(null=True, blank=True)
+    serving_amount_snapshot_g = amount(null=True, blank=True)
     position = models.PositiveIntegerField()
     calories = amount()
     protein_g = amount()
     carbohydrate_g = amount(default=0)
     fat_g = amount()
+    carbs_g = amount(null=True, blank=True)
 
     class Meta:
         ordering = ["position", "created_at"]
@@ -76,6 +81,23 @@ class DailyLogReward(Record):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     nutrition_day = models.OneToOneField(NutritionDay, on_delete=models.CASCADE)
     points_awarded = models.PositiveIntegerField(default=10)
+
+
+class SavedFood(Record):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="saved_foods")
+    name = models.CharField(max_length=120)
+    brand = models.CharField(max_length=120, blank=True)
+    serving_amount_g = amount()
+    calories_per_serving = amount()
+    protein_g_per_serving = amount()
+    fat_g_per_serving = amount()
+    carbs_g_per_serving = amount(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    is_archived = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["name", "created_at"]
+        constraints = [models.CheckConstraint(condition=models.Q(serving_amount_g__gt=0, calories_per_serving__gte=0, protein_g_per_serving__gte=0, fat_g_per_serving__gte=0), name="saved_food_positive_serving")]
 
 
 class Achievement(models.Model):
