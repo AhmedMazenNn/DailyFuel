@@ -43,28 +43,28 @@ export function WeightChart() {
           <div className="mt-4 h-56" aria-hidden dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 8, right: rtl ? 0 : 8, left: rtl ? 8 : 0, bottom: 0 }}>
-                <CartesianGrid stroke="#E1E8F2" vertical={false} />
-                <XAxis dataKey="label" reversed={rtl} tick={{ fill: '#5E6E8A', fontSize: 12 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <CartesianGrid stroke="rgb(var(--line))" vertical={false} />
+                <XAxis dataKey="label" reversed={rtl} tick={{ fill: 'rgb(var(--ink-faint))', fontSize: 12 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                 <YAxis
                 orientation={(rtl ? 'right' : 'left') as any}
                 domain={['dataMin - 1', 'dataMax + 1']}
                 width={44}
-                tick={{ fill: '#5E6E8A', fontSize: 12 }}
+                tick={{ fill: 'rgb(var(--ink-faint))', fontSize: 12 }}
                 tickFormatter={(v: number) => fmt(v, 0)}
                 axisLine={false}
                 tickLine={false} />
 
                 <Tooltip
                 formatter={(v: any) => [`${fmt(Number(v), 1)} ${t(unit)}`, t('weightUnit')]}
-                contentStyle={{ borderRadius: 12, border: '1px solid #E1E8F2', boxShadow: '0 10px 28px -16px rgba(11,27,58,0.25)', direction: dir as any }}
-                labelStyle={{ color: '#0B1B3A', fontWeight: 600 }} />
+                contentStyle={{ backgroundColor: 'rgb(var(--surface))', color: 'rgb(var(--ink))', borderRadius: 12, border: '1px solid rgb(var(--line))', boxShadow: '0 10px 28px -16px rgba(11,27,58,0.25)', direction: dir as any }}
+                labelStyle={{ color: 'rgb(var(--ink))', fontWeight: 600 }} />
 
                 <Line
                 type="monotone"
                 dataKey="value"
                 stroke="#2F6BFF"
                 strokeWidth={3}
-                dot={{ r: 4, fill: '#FFFFFF', stroke: '#2F6BFF', strokeWidth: 2 }}
+                dot={{ r: 4, fill: 'rgb(var(--surface))', stroke: '#2F6BFF', strokeWidth: 2 }}
                 activeDot={{ r: 6, fill: '#2F6BFF' }}
                 isAnimationActive={!reduceMotion}
                 animationDuration={300} />

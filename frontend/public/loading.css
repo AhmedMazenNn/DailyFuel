@@ -1,0 +1,153 @@
+.fuel-loading {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+  background: #f2f6fc;
+  color: #0b1b3a;
+  font-family: Inter, system-ui, sans-serif;
+  text-align: center;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+[data-theme="dark"] .fuel-loading {
+  background: #0b1221;
+  color: #e8efff;
+}
+.fuel-loading-glow {
+  position: absolute;
+  width: min(90vw, 650px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(47, 107, 255, 0.2),
+    rgba(34, 211, 238, 0.08) 45%,
+    transparent 70%
+  );
+  animation: fuel-breathe 4s ease-in-out infinite;
+}
+.fuel-loading-content {
+  position: relative;
+  width: min(100%, 320px);
+}
+.fuel-loading-orbit {
+  width: 116px;
+  height: 116px;
+  margin: 0 auto 32px;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+.fuel-loading-ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(91, 140, 255, 0.25);
+  border-top: 2px solid #5b8cff;
+  border-right: 2px solid #22d3ee;
+  border-radius: 50%;
+  animation: fuel-orbit 2.2s linear infinite;
+}
+.fuel-loading-ring:after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #22d3ee;
+  top: 12px;
+  right: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 18px #22d3ee;
+}
+.fuel-loading-mark {
+  width: 78px;
+  height: 78px;
+  border-radius: 25px;
+  background: linear-gradient(140deg, #1a44b8, #2f6bff 55%, #06b6d4);
+  color: white;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 16px 40px -12px rgba(47, 107, 255, 0.55);
+  animation: fuel-float 3s ease-in-out infinite;
+}
+.fuel-loading-mark svg {
+  width: 40px;
+  height: 40px;
+}
+.fuel-loading-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  font-weight: 700;
+  color: #5e6e8a;
+}
+[data-theme="dark"] .fuel-loading-eyebrow,
+[data-theme="dark"] .fuel-loading-footnote {
+  color: #9baccc;
+}
+.fuel-loading h1 {
+  font-size: 42px;
+  letter-spacing: -0.06em;
+  font-weight: 800;
+  margin: 12px 0 20px;
+}
+.fuel-loading h1 span {
+  color: #2f6bff;
+}
+.fuel-loading-label {
+  font-size: 14px;
+  opacity: 0.8;
+}
+.fuel-loading-footnote {
+  margin-top: 28px;
+  font-size: 12px;
+  color: #5e6e8a;
+}
+.fuel-loading-track {
+  height: 4px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(91, 140, 255, 0.18);
+  width: 150px;
+  margin: 24px auto 0;
+}
+.fuel-loading-track span {
+  display: block;
+  width: 55%;
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #2f6bff, #22d3ee);
+  animation: fuel-progress 1.8s ease-in-out infinite;
+}
+@keyframes fuel-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes fuel-float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes fuel-breathe {
+  50% {
+    transform: scale(1.12);
+    opacity: 0.65;
+  }
+}
+@keyframes fuel-progress {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(290%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fuel-loading * {
+    animation: none !important;
+  }
+}
+[data-reduce-motion="true"] .fuel-loading * {
+  animation: none !important;
+}

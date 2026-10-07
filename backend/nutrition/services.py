@@ -2,7 +2,7 @@
 import hashlib
 import json
 from datetime import timedelta
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Sum
@@ -11,7 +11,7 @@ from rest_framework.exceptions import ValidationError
 
 from accounts.services import local_today
 from .models import (Achievement, DailyLogReward, GamificationProfile, IdempotencyRecord,
-                     Meal, MealItem, NutritionDay, UserAchievement)
+                     Meal, MealItem, NutritionDay, UserAchievement, SavedFood)
 
 DAILY_XP = 10
 LEVEL_XP = 100
@@ -120,10 +120,41 @@ def save_meal(day, data, meal=None):
         if removed:
             meal.items.filter(pk__in=removed).delete()
         new_items, changed_items = [], []
-        fields = ["position", "name", "calories", "protein_g", "carbohydrate_g", "fat_g"]
+        fields = ["position", "name", "calories", "protein_g", "carbohydrate_g", "fat_g",
+                  "saved_food_id", "source_type", "amount_g", "serving_amount_snapshot_g", "carbs_g"]
         for position, entry in enumerate(data["items"]):
             item = existing.get(entry.get("id")) or MealItem(meal=meal)
             before = tuple(getattr(item, field) for field in fields)
+            saved_food_id = entry.get("saved_food_id")
+            if saved_food_id:
+                if item.pk in existing and item.saved_food_id == saved_food_id and item.amount_g:
+                    # Rescale the meal's own snapshot, including archived foods.
+                    multiplier = entry["amount_g"] / item.amount_g
+                    values = dict(zip(KEYS, (item.calories, item.protein_g, item.carbohydrate_g, item.fat_g)))
+                    entry = {**entry, "name": item.name, **{key: value * multiplier for key, value in values.items()}}
+                    if item.carbs_g is not None:
+                        item.carbs_g = (item.carbs_g * multiplier).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                else:
+                    food = SavedFood.objects.filter(pk=saved_food_id, user=day.user, is_archived=False).first()
+                    if food is None:
+                        raise ValidationError({"items": ["Saved food is unavailable."]})
+                    multiplier = entry["amount_g"] / food.serving_amount_g
+                    entry = {**entry, "name": food.name, "calories": food.calories_per_serving * multiplier,
+                             "protein": food.protein_g_per_serving * multiplier, "fat": food.fat_g_per_serving * multiplier,
+                             "carbohydrate": (food.carbs_g_per_serving or 0) * multiplier}
+                    item.saved_food = food
+                    item.source_type = "saved_food"
+                    item.serving_amount_snapshot_g = food.serving_amount_g
+                    item.carbs_g = entry["carbohydrate"] if food.carbs_g_per_serving is not None else None
+                item.amount_g = entry["amount_g"]
+                for key in KEYS:
+                    entry[key] = entry[key].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    if entry[key] > Decimal("9999999.99"):
+                        raise ValidationError({"amount_g": ["This portion exceeds the nutrition limit."]})
+            else:
+                item.saved_food = None
+                item.source_type = "manual"
+                item.amount_g = item.serving_amount_snapshot_g = item.carbs_g = None
             item.position = position
             item.name = entry["name"]
             item.calories, item.protein_g, item.carbohydrate_g, item.fat_g = (entry[k] for k in KEYS)

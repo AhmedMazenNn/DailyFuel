@@ -9,7 +9,7 @@ export function BottomNav() {
       aria-label={t('mainNav')}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
       
-      <ul className="mx-auto grid max-w-xl grid-cols-4">
+      <ul className="mx-auto grid max-w-xl grid-cols-5">
         {NAV_ITEMS.map(({ to, label, icon: Icon }) =>
         <li key={to}>
             <NavLink

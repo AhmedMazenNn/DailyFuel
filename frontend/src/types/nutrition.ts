@@ -1,7 +1,7 @@
-export type EntryMode = 'quick' | 'itemized';
-export type Language = 'en' | 'ar';
-export type WeightUnit = 'kg' | 'lb';
-export type TextSize = 'default' | 'large';
+export type EntryMode = "quick" | "itemized";
+export type Language = "en" | "ar";
+export type WeightUnit = "kg" | "lb";
+export type TextSize = "default" | "large";
 
 export interface Macros {
   calories: number;
@@ -15,11 +15,29 @@ export type Targets = Macros;
 export interface FoodItem extends Macros {
   id: string;
   name: string;
+  savedFoodId?: string | null;
+  amountG?: number | null;
+  servingAmountG?: number | null;
 }
 
-export type FoodItemDraft = Omit<FoodItem, 'id'> & { id?: string };
+export type FoodItemDraft = Omit<FoodItem, "id"> & {
+  id?: string;
+  saved_food_id?: string;
+  amount_g?: string;
+};
 
-export interface SavedFood { id: string; name: string; brand: string; serving_amount_g: number; calories_per_serving: number; protein_g_per_serving: number; fat_g_per_serving: number; carbs_g_per_serving: number | null; notes: string; is_archived: boolean; }
+export interface SavedFood {
+  id: string;
+  name: string;
+  brand: string;
+  serving_amount_g: number;
+  calories_per_serving: number;
+  protein_g_per_serving: number;
+  fat_g_per_serving: number;
+  carbs_g_per_serving: number | null;
+  notes: string;
+  is_archived: boolean;
+}
 
 export interface Meal {
   position: number;
@@ -72,4 +90,11 @@ export interface Settings {
   reduceMotion: boolean;
   showRewards: boolean;
 }
-export interface Day {date: string; targets: Targets; totals: Macros; remaining: Macros; meals: Meal[]; nextMealNumber: number}
+export interface Day {
+  date: string;
+  targets: Targets;
+  totals: Macros;
+  remaining: Macros;
+  meals: Meal[];
+  nextMealNumber: number;
+}

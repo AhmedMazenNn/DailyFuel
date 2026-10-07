@@ -40,7 +40,7 @@ function useAppValue(){
  const setTargets=async(date:string,targets:Targets)=>{await nutritionRequests.setTargets(date,targets);toast.success(t('targetsSaved'));};
  const saveWeight=async(week:string,weightKg:number,measuredOn?:string,note?:string)=>{const rec=await json<WeeklyRecord>(`progress/weeks/${week}/weight/`,'PUT',{weightKg,measuredOn,note});setWeekly(prev=>({...prev,[week]:rec}));toast.success(t('weightSaved'));};
  const addPhoto=async(week:string,file:File,meta:{label:string;note:string;capturedOn:string})=>{const form=new FormData();form.set('image',file);Object.entries(meta).forEach(([k,v])=>form.set(k,v));await request<ProgressPhoto>(`progress/weeks/${week}/photos/`,{method:'POST',body:form});await loadWeek(week);};
- const removePhoto=async(week:string,id:string)=>{await json(`progress/photos/${id}/`,'DELETE');await loadWeek(week);};
+ const removePhoto=async(week:string,id:string)=>{await json(`progress/photos/${id}/`,'DELETE');setWeekly(previous=>{const record=previous[week];return record?{...previous,[week]:{...record,photos:record.photos.filter(photo=>photo.id!==id)}}:previous;});toast.success(t('photoDeleted'));};
  const editPhoto=async(week:string,id:string,meta:Partial<ProgressPhoto>)=>{await json(`progress/photos/${id}/`,'PATCH',meta);await loadWeek(week);};
  const updateSettings=async(patch:Partial<Settings>)=>{const profile=await json<Settings>('profile/','PATCH',patch);setProfile(profile);return profile;};
  const safely=async(action:()=>Promise<unknown>)=>{setPending(n=>n+1);setError('');try{await action();}catch(e){setError((e as Error).message);}finally{setPending(n=>n-1);}};

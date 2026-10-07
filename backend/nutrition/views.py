@@ -115,6 +115,8 @@ class ItemsView(MealView):
         data = validated(ItemSerializer, request.data)
         if "id" in data:
             raise ValidationError({"id": ["New items must not supply an ID."]})
+        if "saved_food_id" in data:
+            return SavedFoodItemView().post(request, pk)
         lock_user(request.user)
         meal = self.owned(request, pk)
         if meal.entry_mode != "itemized":
@@ -139,6 +141,16 @@ class ItemView(PrivateView):
             raise ValidationError({"id": ["Item IDs cannot be changed."]})
         lock_user(request.user)
         item = self.owned(request, pk)
+        if "saved_food_id" in data:
+            rows = []
+            for row in item.meal.items.all():
+                rows.append({"id": row.pk, "name": row.name, "calories": row.calories, "protein": row.protein_g, "carbohydrate": row.carbohydrate_g, "fat": row.fat_g})
+                if row.saved_food_id and row.amount_g:
+                    rows[-1].update(saved_food_id=row.saved_food_id, amount_g=row.amount_g)
+                if row.pk == item.pk:
+                    rows[-1] = {**data, "id": row.pk}
+            save_meal(item.meal.nutrition_day, {"items": rows}, meal=item.meal)
+            return Response(meal_data(item.meal))
         for key, attr in (("name", "name"), ("calories", "calories"), ("protein", "protein_g"), ("fat", "fat_g")):
             if key in data:
                 setattr(item, attr, data[key])
@@ -202,6 +214,8 @@ class SavedFoodItemView(PrivateView):
         food = get_object_or_404(SavedFood, pk=data["saved_food_id"], user=request.user, is_archived=False)
         if data["amount_g"] <= 0:
             raise ValidationError({"amount_g": ["Must be greater than zero."]})
+        if meal.items.count() >= 200:
+            raise ValidationError({"items": ["Maximum 200 items per meal."]})
         multiplier = data["amount_g"] / food.serving_amount_g
         last = meal.items.order_by("-position").first()
         item = MealItem.objects.create(meal=meal, saved_food=food, source_type="saved_food", name=food.name,
