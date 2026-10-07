@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { parseDecimal, round1, uid } from '../../utils/format';
 import type { EntryMode, Meal, MealDraft } from '../../types/nutrition';
+import { mealItemDraft } from '../../utils/mealDraft';
 
 export interface ItemDraft {
   id: string;
@@ -161,7 +162,7 @@ export function useMealForm(open: boolean, meal: Meal | null, defaultName: strin
       carbohydrate: round1(items.reduce((a, i) => a + i.carbohydrate, 0)),
       fat: round1(items.reduce((a, i) => a + i.fat, 0))
     };
-    return { name, mode: 'itemized', note: '', totals, items };
+    return { name, mode: 'itemized', note: '', totals, items: items.map(item => mealItemDraft(item, meal?.items ?? [])) };
   };
 
   const moveItem = (index: number, delta: number) => setForm(f => {const items=[...f.items]; [items[index],items[index+delta]]=[items[index+delta],items[index]];return {...f,items};});

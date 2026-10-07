@@ -17,6 +17,8 @@ export interface FoodItem extends Macros {
   name: string;
 }
 
+export type FoodItemDraft = Omit<FoodItem, 'id'> & { id?: string };
+
 export interface Meal {
   position: number;
   id: string;
@@ -36,7 +38,7 @@ export interface MealDraft {
   mode: EntryMode;
   note: string;
   totals: Macros;
-  items: FoodItem[];
+  items: FoodItemDraft[];
 }
 
 export interface ProgressPhoto {
