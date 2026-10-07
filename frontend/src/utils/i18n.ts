@@ -1,6 +1,16 @@
 import type { Language } from '../types/nutrition';
 
 const en = {
+  savedFoodAdd: "Add saved food",
+  savedFoodChoose: "Choose a food",
+  savedFoodAmount: "Amount eaten (g)",
+  savedFoodEmpty: "No saved foods yet. Add foods from Saved foods.",
+  savedFoodDelete: "Delete",
+  savedFoodEdit: "Edit",
+  savedFoodCancel: "Cancel editing",
+  savedFoodSave: "Save changes",
+  savedFoodConfirm: "Remove {name} from saved foods? Previously logged meals will stay unchanged.",
+  savedFoodAddButton: "Add",
   appName: 'Tally',
   'nav.home': 'Home',
   'nav.history': 'History',
@@ -181,6 +191,16 @@ const en = {
 export type TKey = keyof typeof en;
 
 const ar: Record<TKey, string> = {
+  savedFoodAdd: "إضافة طعام محفوظ",
+  savedFoodChoose: "اختر طعامًا",
+  savedFoodAmount: "الكمية المتناولة (جم)",
+  savedFoodEmpty: "لا توجد أطعمة محفوظة. أضف طعامًا من صفحة الأطعمة المحفوظة.",
+  savedFoodDelete: "حذف",
+  savedFoodEdit: "تعديل",
+  savedFoodCancel: "إلغاء التعديل",
+  savedFoodSave: "حفظ التغييرات",
+  savedFoodConfirm: "حذف {name} من الأطعمة المحفوظة؟ لن تتغير الوجبات المسجلة سابقًا.",
+  savedFoodAddButton: "إضافة",
   appName: 'Tally',
   'nav.home': 'الرئيسية',
   'nav.history': 'السجل',

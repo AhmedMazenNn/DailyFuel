@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework import serializers
 from .models import SavedFood
 
@@ -12,6 +13,19 @@ class MacrosSerializer(serializers.Serializer):
 class ItemSerializer(MacrosSerializer):
     id = serializers.UUIDField(required=False)
     name = serializers.CharField(max_length=120)
+    saved_food_id = serializers.UUIDField(required=False)
+    amount_g = serializers.DecimalField(max_digits=9, decimal_places=2, min_value=0, required=False)
+
+    def to_internal_value(self, data):
+        # Nested list serializers validate each row without initial_data.
+        if isinstance(data, dict) and data.get("saved_food_id"):
+            use = SavedFoodUseSerializer(data=data)
+            use.is_valid(raise_exception=True)
+            attrs = dict(use.validated_data)
+            if "id" in data:
+                attrs["id"] = self.fields["id"].run_validation(data["id"])
+            return attrs
+        return super().to_internal_value(data)
 
 
 class MealSerializer(serializers.Serializer):
@@ -47,4 +61,4 @@ class SavedFoodSerializer(serializers.ModelSerializer):
 
 class SavedFoodUseSerializer(serializers.Serializer):
     saved_food_id = serializers.UUIDField()
-    amount_g = serializers.DecimalField(max_digits=9, decimal_places=2, min_value=0)
+    amount_g = serializers.DecimalField(max_digits=9, decimal_places=2, min_value=Decimal("0.01"))

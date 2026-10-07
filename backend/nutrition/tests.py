@@ -103,6 +103,45 @@ class NutritionTests(TransactionTestCase):
         self.assertEqual(self.client.get(f"/api/v1/meals/{meal['id']}/").status_code, 200)
         self.assertEqual(self.client.post(f"/api/v1/meals/{meal['id']}/items/from-saved-food/", {"saved_food_id": food_id, "amount_g": 60}, format="json").status_code, 404)
 
+    def test_saved_food_in_meal_create_rescale_and_archived_history(self):
+        food = SavedFood.objects.create(user=self.user, name="Oats", serving_amount_g=40,
+            calories_per_serving=150, protein_g_per_serving=5, fat_g_per_serving=3)
+        created = self.post({"mode": "itemized", "items": [{"saved_food_id": str(food.pk), "amount_g": "60.00"}]})
+        self.assertEqual(created.status_code, 201, created.data)
+        self.assertEqual(created.data["totals"]["calories"], 225)
+        item = created.data["items"][0]
+        url = f"/api/v1/meals/{created.data['id']}/"
+        self.client.patch(f"/api/v1/saved-foods/{food.pk}/", {"calories_per_serving": 900}, format="json")
+        self.client.delete(f"/api/v1/saved-foods/{food.pk}/")
+        draft = {"id": item["id"], "saved_food_id": str(food.pk), "amount_g": "60.00"}
+        unchanged = self.client.patch(url, {"name": "Breakfast", "items": [draft]}, format="json")
+        self.assertEqual(unchanged.status_code, 200, unchanged.data)
+        self.assertEqual(unchanged.data["totals"]["calories"], 225)
+        changed = self.client.patch(url, {"items": [{**draft, "amount_g": "30.00"}]}, format="json")
+        self.assertEqual(changed.status_code, 200, changed.data)
+        self.assertEqual(changed.data["totals"]["calories"], 112.5)
+        self.assertEqual(changed.data["items"][0]["amountG"], 30)
+        self.assertEqual(self.client.get(self.url).data["totals"]["calories"], 112.5)
+        self.assertEqual(self.post({"mode": "itemized", "items": [draft | {"id": item["id"]}]}).status_code, 400)
+        self.assertEqual(self.post({"mode": "itemized", "items": [{"saved_food_id": str(food.pk), "amount_g": 30}]}).status_code, 400)
+
+    def test_saved_food_portion_validation_and_owner_scope(self):
+        other = get_user_model().objects.create_user(email="food-other@example.com", password="SecureTest123!")
+        food = SavedFood.objects.create(user=other, name="Private", serving_amount_g=100,
+            calories_per_serving=100, protein_g_per_serving=10, fat_g_per_serving=5)
+        food_url = f"/api/v1/saved-foods/{food.pk}/"
+        for response in [self.client.get(food_url), self.client.patch(food_url, {"name": "Hijack"}, format="json"), self.client.delete(food_url)]:
+            self.assertEqual(response.status_code, 404)
+        self.assertEqual(self.post({"mode": "itemized", "items": [{"saved_food_id": str(food.pk), "amount_g": 50}]}).status_code, 400)
+        food.user = self.user
+        food.save()
+        for amount in (0, -1, "NaN", "0.001"):
+            self.assertEqual(self.post({"mode": "itemized", "items": [{"saved_food_id": str(food.pk), "amount_g": amount}]}).status_code, 400)
+        created = self.post({"mode": "itemized", "items": [{"saved_food_id": str(food.pk), "amount_g": "33.33", "calories": 9999}]})
+        self.assertEqual(created.status_code, 201, created.data)
+        self.assertEqual(created.data["totals"]["calories"], 33.33)
+        self.assertEqual(created.data["totals"]["protein"], 3.33)
+
     def test_owner_scope_and_history(self):
         meal = self.post().data
         other = get_user_model().objects.create_user(email="other@example.com", password="SecureTest123!")
