@@ -45,3 +45,41 @@ class WeightTests(TestCase):
         self.assertEqual(self.client.get("/api/v1/progress/weeks/").data["results"], [])
         self.client.force_authenticate(None)
         self.assertIn(self.client.get(self.url).status_code, (401, 403))
+
+    def test_private_photo_view_delete_and_upload_replacement(self):
+        from io import BytesIO
+        from tempfile import TemporaryDirectory
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from .models import ProgressPhoto
+
+        def image():
+            buffer = BytesIO()
+            Image.new("RGB", (40, 60), "blue").save(buffer, format="PNG")
+            return SimpleUploadedFile("progress.png", buffer.getvalue(), content_type="image/png")
+
+        with TemporaryDirectory() as media, self.settings(PRIVATE_MEDIA_ROOT=media):
+            self.client.put(self.url, {"weightKg": 70}, format="json")
+            upload_url = "/api/v1/progress/weeks/2026-10-05/photos/"
+            photos = []
+            for _ in range(4):
+                with self.captureOnCommitCallbacks(execute=True):
+                    response = self.client.post(upload_url, {"image": image()}, format="multipart")
+                self.assertEqual(response.status_code, 201, response.data)
+                photos.append(response.data)
+            self.assertEqual(self.client.post(upload_url, {"image": image()}, format="multipart").status_code, 400)
+            first = photos[0]
+            self.assertEqual(self.client.get(first["url"]).status_code, 200)
+            self.client.force_authenticate(self.other)
+            self.assertEqual(self.client.get(first["url"]).status_code, 404)
+            self.assertEqual(self.client.delete(f"/api/v1/progress/photos/{first['id']}/").status_code, 404)
+            self.client.force_authenticate(self.user)
+            with self.captureOnCommitCallbacks(execute=True):
+                self.assertEqual(self.client.delete(f"/api/v1/progress/photos/{first['id']}/").status_code, 204)
+            self.assertEqual(self.client.get(first["url"]).status_code, 404)
+            self.assertEqual(ProgressPhoto.objects.count(), 3)
+            self.assertEqual(WeeklyWeight.objects.get().weight_kg, Decimal("70"))
+            with self.captureOnCommitCallbacks(execute=True):
+                replacement = self.client.post(upload_url, {"image": image()}, format="multipart")
+            self.assertEqual(replacement.status_code, 201, replacement.data)
+            self.assertEqual(ProgressPhoto.objects.count(), 4)

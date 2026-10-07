@@ -1,6 +1,18 @@
 import type { Language } from '../types/nutrition';
 
 const en = {
+  photoDeleted: 'Photo deleted. You can upload a replacement.',
+  photoFullscreen: "Full-screen photo",
+  photoOpen: "View {name} full screen",
+  photoLoading: "Loading photo…",
+  photoLoadError: "Could not load this photo. Close and try again.",
+  photoDelete: "Delete photo",
+  photoDeleteConfirm: "Delete this photo?",
+  photoDeleteHint: "This frees a slot for a new photo in the same week. Your weight record stays saved.",
+  photoDeleting: "Deleting…",
+  photoOlderWeeks: "Load older weeks",
+  photoUploadBusy: "Uploading photo…",
+  photoFullHint: "Delete a photo below to upload a replacement.",
   foodEditingBadge: 'Editing now',
   foodEditingHint: 'Changes apply to this saved food. Previously logged meals stay unchanged.',
   foodEditingTitle: 'Edit {name}',
@@ -196,6 +208,18 @@ const en = {
 export type TKey = keyof typeof en;
 
 const ar: Record<TKey, string> = {
+  photoDeleted: 'تم حذف الصورة. يمكنك رفع صورة جديدة.',
+  photoFullscreen: "عرض الصورة بملء الشاشة",
+  photoOpen: "عرض {name} بملء الشاشة",
+  photoLoading: "جارٍ تحميل الصورة…",
+  photoLoadError: "تعذر تحميل الصورة. أغلق وحاول مرة أخرى.",
+  photoDelete: "حذف الصورة",
+  photoDeleteConfirm: "هل تريد حذف هذه الصورة؟",
+  photoDeleteHint: "يتيح الحذف إضافة صورة جديدة في نفس الأسبوع. سيبقى الوزن محفوظًا.",
+  photoDeleting: "جارٍ الحذف…",
+  photoOlderWeeks: "تحميل الأسابيع السابقة",
+  photoUploadBusy: "جارٍ رفع الصورة…",
+  photoFullHint: "احذف صورة أدناه لرفع صورة جديدة.",
   foodEditingBadge: 'قيد التعديل',
   foodEditingHint: 'التغييرات تخص هذا الطعام المحفوظ. لن تتغير الوجبات المسجلة سابقًا.',
   foodEditingTitle: 'تعديل {name}',
