@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { FlameIcon, LogOutIcon } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 import { TODAY } from '../utils/date';
 import { inputBase, inputBorder, secondaryButton } from '../utils/styles';
 import type { Language, TextSize, WeightUnit } from '../types/nutrition';
@@ -14,6 +15,13 @@ import { Switch } from '../components/ui/Switch';
 
 export function Profile() {
   const { t, fmt, settings, updateSettings, stats, getTargets, setTargets } = useApp();
+  const { logout } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
+  const signOut = async () => {
+    setSigningOut(true);
+    try { await logout(); }
+    catch (cause) { toast.error((cause as Error).message); setSigningOut(false); }
+  };
   const [name, setName] = useState(settings.name);
   const [email, setEmail] = useState(settings.email);
   const [emailError, setEmailError] = useState('');
@@ -148,9 +156,9 @@ export function Profile() {
                 <button type="submit" className={secondaryButton}>
                   {t('saveAccount')}
                 </button>
-                <button type="button" onClick={() => toast(t('signedOutDemo'))} className="inline-flex min-h-[48px] items-center gap-2 rounded-2xl px-4 text-sm font-semibold text-ink-soft hover:bg-canvas">
+                <button type="button" onClick={() => void signOut()} disabled={signingOut} aria-busy={signingOut} className="inline-flex min-h-[48px] items-center gap-2 rounded-2xl px-4 text-sm font-semibold text-ink-soft hover:bg-canvas disabled:cursor-wait disabled:opacity-60">
                   <LogOutIcon className="h-4 w-4 rtl:rotate-180" aria-hidden />
-                  {t('signOut')}
+                  {signingOut ? t('signingOut') : t('signOut')}
                 </button>
               </div>
             </form>
