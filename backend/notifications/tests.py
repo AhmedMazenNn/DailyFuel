@@ -2,7 +2,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from unittest.mock import patch
 
 from django.core import mail
-from django.test import SimpleTestCase, TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, TransactionTestCase, override_settings
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
@@ -348,3 +348,68 @@ class ProviderFailureTests(SimpleTestCase):
             with self.assertRaises(EmailDeliveryUncertain) as failure:
                 BrevoEmailBackend().send_messages([message])
         self.assertNotIn('PRIVATE', str(failure.exception))
+
+
+@override_settings(**EMAIL_SETTINGS)
+class ConcurrentClaimTests(TransactionTestCase):
+    """Separate PostgreSQL connections contend for durable reservations."""
+
+    def create_due_user(self, email):
+        user = User.objects.create_user(email, 'password')
+        ReminderPreference.objects.create(
+            user=user, enabled=True, confirmed_email=user.email,
+            confirmed_at=NOW - timedelta(days=10), next_due_at=NOW,
+            schedule_timezone='UTC', include_photos=True,
+        )
+        return user
+
+    def simultaneous_claims(self, user_ids):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier
+        from django.db import connection, connections
+        from .worker import claim
+        if connection.vendor != 'postgresql':
+            self.skipTest('Real PostgreSQL row locking is required.')
+        barrier = Barrier(len(user_ids))
+
+        def reserve(user_id):
+            # Django connections are thread-local. Force each thread to open its
+            # own database session before releasing the contenders together.
+            connections.close_all()
+            try:
+                with connections['default'].cursor() as cursor:
+                    cursor.execute('SET statement_timeout = 10000')
+                    cursor.execute('SELECT pg_backend_pid()')
+                    session_id = cursor.fetchone()[0]
+                barrier.wait(timeout=10)
+                return session_id, claim(user_id, NOW)
+            finally:
+                connections.close_all()
+
+        with ThreadPoolExecutor(max_workers=len(user_ids)) as executor:
+            futures = [executor.submit(reserve, user_id) for user_id in user_ids]
+            outcomes = [future.result(timeout=20) for future in futures]
+        self.assertEqual(len({session for session, _ in outcomes}), len(user_ids))
+        return [reservation for _, reservation in outcomes]
+
+    def test_same_user_concurrent_claims_reserve_only_one_provider_opportunity(self):
+        from .worker import deliver
+        user = self.create_due_user('concurrent-same@example.com')
+        reservations = self.simultaneous_claims([user.pk, user.pk])
+        successful = [reservation for reservation in reservations if reservation is not None]
+        self.assertEqual(len(successful), 1)
+        self.assertEqual(ReminderDelivery.objects.filter(user=user).count(), 1)
+        self.assertEqual(ReminderDailyBudget.objects.get(date=NOW.date()).attempts, 1)
+        self.assertEqual(deliver(successful[0], NOW), 'sent')
+        self.assertEqual(deliver(successful[0], NOW), 'skipped')
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_different_users_contend_for_last_daily_budget_slot(self):
+        users = [self.create_due_user(f'concurrent-{index}@example.com') for index in range(2)]
+        ReminderDailyBudget.objects.create(date=NOW.date(), attempts=199)
+        reservations = self.simultaneous_claims([user.pk for user in users])
+        self.assertEqual(sum(reservation is not None for reservation in reservations), 1)
+        self.assertEqual(ReminderDelivery.objects.count(), 1)
+        self.assertEqual(ReminderDailyBudget.objects.get(date=NOW.date()).attempts, 200)
+        remaining = ReminderPreference.objects.filter(next_due_at=NOW)
+        self.assertEqual(remaining.count(), 1)

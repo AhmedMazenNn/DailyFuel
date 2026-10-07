@@ -20,7 +20,7 @@ export function EmailReminderAction({ action }: { action: 'confirm' | 'unsubscri
     catch { setError(text('This link could not be used. It may have expired or been replaced. Open your profile to request a new confirmation or change your preferences.', 'تعذر استخدام الرابط. ربما انتهت صلاحيته أو تم استبداله. افتح ملفك لطلب تأكيد جديد أو تعديل إعداداتك.')); }
     finally { setBusy(false); }
   };
-  return <main dir={ar ? 'rtl' : 'ltr'} className="min-h-screen bg-canvas px-4 py-8 text-ink sm:py-16">
+  return <main lang={ar ? 'ar' : 'en'} dir={ar ? 'rtl' : 'ltr'} className="min-h-screen bg-canvas px-4 py-8 text-ink sm:py-16">
     <div className="mx-auto max-w-lg"><div className="mb-6 flex items-center justify-between"><a href="/" className="font-display text-xl font-extrabold text-ink">DailyFuel</a><ThemeToggle language={ar ? 'ar' : 'en'} /></div>
       <div className={`${card} overflow-hidden`}>
         <div className="hero-surface p-7 text-white sm:p-9"><span className="mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-white/20 ring-1 ring-white/30">{complete ? <CheckCircle2Icon className="h-7 w-7" aria-hidden /> : <MailIcon className="h-7 w-7" aria-hidden />}</span><h1 className="font-display text-2xl font-bold">{complete ? (confirm ? text('Your weekly reminders are confirmed', 'تم تأكيد تذكيراتك الأسبوعية') : text('Weekly emails are turned off', 'تم إيقاف الرسائل الأسبوعية')) : (confirm ? text('Confirm weekly check-in emails', 'تأكيد رسائل المتابعة الأسبوعية') : text('Unsubscribe from weekly emails', 'إلغاء الاشتراك في الرسائل الأسبوعية'))}</h1></div>
