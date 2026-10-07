@@ -1,122 +1,29 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { ThemeProvider } from './contexts/ThemeContext';
+import { LoadingScreen } from './components/ui/LoadingScreen';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { Auth } from './pages/Auth';
+import { AppProvider } from './contexts/AppContext';
+import { AppShell } from './components/layout/AppShell';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Home } from './pages/Home';
+import { History } from './pages/History';
+import { Progress } from './pages/Progress';
+import { Profile } from './pages/Profile';
+import { SavedFoods } from './pages/SavedFoods';
+import { json } from './utils/api';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+function Onboarding() {
+  const { refresh } = useAuth();
+  const [values, setValues] = useState({ calories: '2000', protein: '150', carbohydrate: '220', fat: '65' });
+  const [error, setError] = useState('');
+  const save = async (event: FormEvent) => {
+    event.preventDefault(); setError('');
+    try { await json('profile/', 'PATCH', { onboardingComplete: true, initialTargets: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, Number(value)])) }); await refresh(); }
+    catch (cause) { setError((cause as Error).message); }
+  };
+  return <main className="app-backdrop min-h-screen px-4 py-10 text-ink"><form onSubmit={save} className="mx-auto max-w-md rounded-[28px] bg-white p-7 shadow-card ring-1 ring-line"><h1 className="font-display text-3xl font-extrabold">Set your DailyFuel targets</h1><p className="mt-2 text-ink-soft">These are your starting values. You can change them for any date later.</p><div className="mt-6 space-y-4">{([['calories','Calories'],['protein','Protein (g)'],['carbohydrate','Carbohydrates (g)'],['fat','Fat (g)']] as const).map(([key,label]) => <label key={key} className="block text-sm font-semibold">{label}<input required min="0" step="0.01" type="number" value={values[key]} onChange={event => setValues(previous => ({ ...previous, [key]: event.target.value }))} className="mt-1 h-12 w-full rounded-xl border border-line px-3" /></label>)}</div>{error && <p role="alert" className="mt-4 text-sm text-red-700">{error}</p>}<button className="mt-6 w-full rounded-xl bg-brand-600 px-4 py-3 font-bold text-white">Continue</button></form></main>;
 }
-
-export default App
+function Application() { const {session,error,refresh}=useAuth(); if(error)return <main className="p-8"><p role="alert">{error}</p><button onClick={()=>void refresh()}>Retry</button></main>; if(!session)return <LoadingScreen/>; if(!session.user)return <Auth/>; if(!session.profile?.onboardingComplete)return <Onboarding/>; return <AppProvider><BrowserRouter><AppShell><Routes><Route path="/" element={<Home/>}/><Route path="/history" element={<History/>}/><Route path="/progress" element={<Progress/>}/><Route path="/foods" element={<SavedFoods/>}/><Route path="/profile" element={<Profile/>}/><Route path="*" element={<Home/>}/></Routes></AppShell></BrowserRouter></AppProvider>; }
+export default function App(){return <ThemeProvider><AuthProvider><Application/></AuthProvider></ThemeProvider>;}

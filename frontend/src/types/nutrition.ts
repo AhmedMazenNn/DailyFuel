@@ -1,0 +1,100 @@
+export type EntryMode = "quick" | "itemized";
+export type Language = "en" | "ar";
+export type WeightUnit = "kg" | "lb";
+export type TextSize = "default" | "large";
+
+export interface Macros {
+  calories: number;
+  protein: number;
+  carbohydrate: number;
+  fat: number;
+}
+
+export type Targets = Macros;
+
+export interface FoodItem extends Macros {
+  id: string;
+  name: string;
+  savedFoodId?: string | null;
+  amountG?: number | null;
+  servingAmountG?: number | null;
+}
+
+export type FoodItemDraft = Omit<FoodItem, "id"> & {
+  id?: string;
+  saved_food_id?: string;
+  amount_g?: string;
+};
+
+export interface SavedFood {
+  id: string;
+  name: string;
+  brand: string;
+  serving_amount_g: number;
+  calories_per_serving: number;
+  protein_g_per_serving: number;
+  fat_g_per_serving: number;
+  carbs_g_per_serving: number | null;
+  notes: string;
+  is_archived: boolean;
+}
+
+export interface Meal {
+  position: number;
+  id: string;
+  date: string;
+  name: string;
+  mode: EntryMode;
+  /** Free-text list of foods (quick entry). Itemized meals derive their summary from items. */
+  note: string;
+  /** Always the single source of truth for daily totals. For itemized meals it equals the sum of items. */
+  totals: Macros;
+  items: FoodItem[];
+  createdAt: string;
+}
+
+export interface MealDraft {
+  name: string;
+  mode: EntryMode;
+  note: string;
+  totals: Macros;
+  items: FoodItemDraft[];
+}
+
+export interface ProgressPhoto {
+  thumbnailUrl: string;
+  label: string;
+  note: string;
+  capturedOn: string;
+  id: string;
+  url: string;
+}
+
+export interface WeeklyRecord {
+  measuredOn?: string;
+  note?: string;
+  weekStart: string;
+  weightKg: number | null;
+  photos: ProgressPhoto[];
+}
+
+export interface Settings {
+  timezone: string;
+  onboardingComplete: boolean;
+  initialTargets: Targets;
+  name: string;
+  email: string;
+  language: Language;
+  weightUnit: WeightUnit;
+  textSize: TextSize;
+  reduceMotion: boolean;
+  showRewards: boolean;
+}
+export interface Day {
+  date: string;
+  targets: Targets;
+  totals: Macros;
+  remaining: Macros;
+  meals: Meal[];
+  nextMealNumber: number;
+}

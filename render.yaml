@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: dailyfuel-api
+    runtime: python
+    plan: free
+    branch: main
+    rootDir: backend
+    buildCommand: bash build.sh
+    startCommand: bash start.sh
+    healthCheckPath: /api/v1/health/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DEBUG
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: TRUST_PROXY_HEADERS
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_DISABLE_SERVER_SIDE_CURSORS
+        value: "true"
+      - key: FRONTEND_URL
+        sync: false
+      - key: PRIVATE_MEDIA_BACKEND
+        value: s3
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_REGION_NAME
+        sync: false
+      - key: S3_BUCKET_NAME
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: EMAIL_BACKEND
+        value: accounts.email_backend.BrevoEmailBackend
+      - key: BREVO_API_KEY
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
