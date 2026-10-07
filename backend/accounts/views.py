@@ -20,7 +20,7 @@ def _profile(p):
             "initialTargets": {"calories": float(p.initial_calories), "protein": float(p.initial_protein), "carbohydrate": float(p.initial_carbohydrate), "fat": float(p.initial_fat)}}
 
 def _session_payload(user):
-    return {"user": {"id": str(user.pk), "email": user.email}, "profile": _profile(user.profile)}
+    return {"user": {"id": str(user.pk), "email": user.email, "isAdmin": user.is_active and user.is_superuser}, "profile": _profile(user.profile)}
 
 @api_view(["GET"])
 @permission_classes([AllowAny])

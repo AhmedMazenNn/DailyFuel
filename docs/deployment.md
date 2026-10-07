@@ -75,3 +75,19 @@ npm run build
 ```
 
 Use an isolated local test database, not the production Neon database. Storage and transactional-email tests mock providers; production credentials and live deployments still require the checks above.
+
+## Account administration
+
+Open `https://daily-fuel-pi.vercel.app/admin/accounts/user/` using an active **superuser** account. Once signed in to the app, superusers also see **Manage accounts** beside the theme control. The admin console has its own sign-in form and uses the same account/session as the application.
+
+To create the first administrator, run the following from your local backend environment with `DATABASE_URL` pointing to your existing Neon database. Use environment configuration for the connection string; do not commit it or share passwords in chat.
+
+```bash
+python manage.py createsuperuser
+```
+
+Enter a dedicated administrator email and a strong password at the prompts. This creates its profile automatically. Administrator privileges cannot be granted from public registration or the account-editing page. Keep administrator credentials separate from ordinary user credentials.
+
+The user list supports email/name search, status filters, and pagination. Select a user to change their email, active status, display name, timezone, language, or weight unit, or use the password-change form. Disabling an ordinary account blocks sign-in and authenticated access without deleting its data. Email changes validate uniqueness and reset verification of the changed address.
+
+Deleting an ordinary account requires reviewing its confirmation screen and permanently removes its associated application records. Original photos and thumbnails are queued for private-storage deletion; temporary storage failures leave durable retry jobs. Use `python manage.py cleanup_private_media` to retry pending jobs when needed. Bulk deletion and administrator-account deletion/deactivation are disabled. Administrator roles are read-only on this page. Django records successful edits, password changes, and deletions in its administration history; ordinary users cannot access this console.
