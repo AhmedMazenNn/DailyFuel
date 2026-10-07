@@ -162,3 +162,50 @@ class NutritionTests(TransactionTestCase):
         bad = self.post({"mode": "itemized", "items": []})
         self.assertEqual(bad.status_code, 400)
         self.assertEqual(self.client.get(self.url).data["nextMealNumber"], 3)
+
+    def test_save_returns_current_snapshots_including_idempotent_replay(self):
+        first = self.post(HTTP_IDEMPOTENCY_KEY="snapshot")
+        self.assertEqual(first.data["day"]["totals"]["calories"], 100.1)
+        self.assertEqual(first.data["gamification"]["xp"], 10)
+        second = self.post()
+        replay = self.post(HTTP_IDEMPOTENCY_KEY="snapshot")
+        self.assertEqual(replay.data["id"], first.data["id"])
+        self.assertEqual(replay.data["day"], second.data["day"])
+        edited = self.client.patch(f"/api/v1/meals/{first.data['id']}/", {
+            "totals": {"calories": "200", "protein": 10, "fat": 2}
+        }, format="json")
+        self.assertEqual(edited.data["day"]["totals"]["calories"], 300.1)
+        self.assertEqual(edited.data["gamification"]["xp"], 10)
+
+    def test_save_query_count_does_not_grow_with_rewarded_history_or_items(self):
+        from django.test.utils import CaptureQueriesContext
+
+        self.post()
+        with CaptureQueriesContext(connection) as initial:
+            self.assertEqual(self.post().status_code, 201)
+        for i in range(39):
+            day = NutritionDay.objects.create(
+                user=self.user, local_date=date(2025, 1, 1) + timedelta(days=i),
+                target_calories=2000, target_protein_g=100, target_fat_g=60,
+            )
+            Meal.objects.create(
+                nutrition_day=day, name="Prior", position=0, entry_mode="quick",
+                quick_calories=1, quick_protein_g=1, quick_carbohydrate_g=1, quick_fat_g=1,
+            )
+            DailyLogReward.objects.create(user=self.user, nutrition_day=day)
+        self.client.get("/api/v1/gamification/")
+        with CaptureQueriesContext(connection) as historical:
+            self.assertEqual(self.post().status_code, 201)
+        self.assertEqual(len(historical), len(initial))
+        food = {"name": "Food", "calories": 1, "protein": 1, "fat": 1}
+        with CaptureQueriesContext(connection) as one_item:
+            self.assertEqual(self.post({"mode": "itemized", "items": [food]}).status_code, 201)
+        with CaptureQueriesContext(connection) as many_items:
+            result = self.post({"mode": "itemized", "items": [food] * 40})
+        self.assertEqual(result.status_code, 201)
+        self.assertEqual(len(many_items), len(one_item))
+        self.assertEqual(result.data["totals"]["calories"], 40)
+        with CaptureQueriesContext(connection) as unchanged:
+            self.client.get("/api/v1/gamification/")
+        self.assertFalse(any(query["sql"].lstrip().upper().startswith(("UPDATE", "INSERT", "DELETE"))
+                             for query in unchanged))

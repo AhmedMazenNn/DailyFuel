@@ -22,14 +22,16 @@ Backend accounts exposes `accounts.models.Profile` with `user` one-to-one (relat
 Macros are `{calories,protein,fat}`. Meal draft is `{name,mode:'quick'|'itemized',note,totals:Macros,items:[{id?,name,calories,protein,fat}]}`. In itemized mode only item macros count. Meals return `{id,date,name,mode,note,totals,items,createdAt,position}`.
 
 - GET/PUT `nutrition-days/{date}/`: `{date,targets,totals,remaining,meals,nextMealNumber}`. PUT accepts `{targets:Macros}`. GET never creates rows. All mutations reconcile from server day response.
-- GET/POST `nutrition-days/{date}/meals/`: list/create; POST returns Meal, supports `Idempotency-Key`.
-- GET/PATCH/DELETE `meals/{id}/`: PATCH accepts complete draft or partial fields, returns Meal.
+- GET/POST `nutrition-days/{date}/meals/`: list/create; POST returns Meal plus `day` and `gamification` snapshots, supports `Idempotency-Key`.
+- GET/PATCH/DELETE `meals/{id}/`: PATCH accepts complete draft or partial fields, returns Meal plus `day` and `gamification` snapshots. DELETE returns 204.
 - POST `nutrition-days/{date}/meals/reorder/`: `{ids:[...]}`.
 - POST `meals/{id}/items/`; PATCH/DELETE `meal-items/{id}/`; POST `meals/{id}/items/reorder/` `{ids:[...]}`.
 - GET `history/?from=YYYY-MM-DD&to=YYYY-MM-DD&page=1`: `{results:[Day],count,next,previous}` (31 days per page; saved days only).
 - GET `gamification/`: `{xp,level,levelProgress,xpToNext,streak,longestStreak,loggedDays,earned:[code]}`. Codes `first`, `seven`, `thirty`; logging only, 10 XP per date, 100 XP per level. Past earned XP persists after deletion. Future dates do not reward until they become current; active streak derives from currently logged dates up to today, ending today or yesterday.
 
 Backend nutrition exposes `nutrition.models.NutritionDay` and `Meal`; gamification implemented in nutrition app to transact with meal mutation.
+
+Meal save responses include the authoritative day totals, meals, and reward state in the same transaction. Clients should apply these snapshots without fetching the day and rewards again. An idempotent create retry retains the original Meal result but includes current day and gamification snapshots, so replay cannot roll the dashboard back to an earlier state.
 
 ## Progress
 

@@ -61,13 +61,15 @@ class MealsView(PrivateView):
         key = request.headers.get("Idempotency-Key")
         previous, fingerprint = retry_record(request.user, date, key, request.data)
         if previous:
-            return Response(previous.response, status=201)
+            return Response({**previous.response, "day": day_data(request.user, date),
+                             "gamification": reconcile_rewards(request.user)}, status=201)
         day = get_day(request.user, date)
         meal = save_meal(day, data)
-        response = meal_data(meal)
+        snapshot = day_data(request.user, date, day)
+        response = next(entry for entry in snapshot["meals"] if entry["id"] == str(meal.pk))
         if key:
             IdempotencyRecord.objects.create(user=request.user, key=key, fingerprint=fingerprint, response=response)
-        return Response(response, status=201)
+        return Response({**response, "day": snapshot, "gamification": reconcile_rewards(request.user)}, status=201)
 
 
 class MealView(PrivateView):
@@ -83,7 +85,10 @@ class MealView(PrivateView):
         data = validated(MealSerializer, request.data)
         lock_user(request.user)
         meal = self.owned(request, pk)
-        return Response(meal_data(save_meal(meal.nutrition_day, data, meal)))
+        save_meal(meal.nutrition_day, data, meal)
+        snapshot = day_data(request.user, meal.nutrition_day.local_date, meal.nutrition_day)
+        response = next(entry for entry in snapshot["meals"] if entry["id"] == str(meal.pk))
+        return Response({**response, "day": snapshot, "gamification": reconcile_rewards(request.user)})
 
     @transaction.atomic
     def delete(self, request, pk):
