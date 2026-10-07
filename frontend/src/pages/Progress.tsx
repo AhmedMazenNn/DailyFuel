@@ -66,6 +66,8 @@ export function Progress() {
           </div>
           <div className="space-y-4">
             <PhotoUploader />
+          </div>
+          <div className="min-w-0 lg:col-span-2">
             <PhotoGallery />
             {weeksNext && (
               <button

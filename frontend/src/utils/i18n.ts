@@ -1,6 +1,14 @@
 import type { Language } from '../types/nutrition';
 
 const en = {
+  compareFirst: "First photo",
+  compareSecond: "Second photo",
+  comparePickHint: "Choose any photo from any week below.",
+  compareSelected: "Selected",
+  compareAnyPhotos: "Choose two photos independently to compare them side by side, including photos from the same week.",
+  comparePair: "Selected photos side by side",
+  compareLoadingWeeks: "Loading all older weeks…",
+  compareRetry: "Try again",
   photoDeleted: 'Photo deleted. You can upload a replacement.',
   photoFullscreen: "Full-screen photo",
   photoOpen: "View {name} full screen",
@@ -208,6 +216,14 @@ const en = {
 export type TKey = keyof typeof en;
 
 const ar: Record<TKey, string> = {
+  compareFirst: "الصورة الأولى",
+  compareSecond: "الصورة الثانية",
+  comparePickHint: "اختر أي صورة من أي أسبوع أدناه.",
+  compareSelected: "محددة",
+  compareAnyPhotos: "اختر صورتين بشكل مستقل للمقارنة جنبًا إلى جنب، حتى من نفس الأسبوع.",
+  comparePair: "الصور المحددة جنبًا إلى جنب",
+  compareLoadingWeeks: "جارٍ تحميل جميع الأسابيع السابقة…",
+  compareRetry: "حاول مرة أخرى",
   photoDeleted: 'تم حذف الصورة. يمكنك رفع صورة جديدة.',
   photoFullscreen: "عرض الصورة بملء الشاشة",
   photoOpen: "عرض {name} بملء الشاشة",

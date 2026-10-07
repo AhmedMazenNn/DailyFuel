@@ -65,7 +65,7 @@ export function PhotoViewer({
             </p>
             <h2
               id="photo-viewer-title"
-              className="mt-1 truncate text-sm font-semibold"
+              className="mt-1 break-words text-sm font-semibold"
             >
               {title}
             </h2>
@@ -98,7 +98,7 @@ export function PhotoViewer({
           )}
           <img
             src={photo.url}
-            alt={photo.label || title}
+            alt={title}
             onLoad={() => setImageState("ready")}
             onError={() => setImageState("error")}
             className={`h-full w-full object-contain ${imageState === "error" ? "hidden" : ""}`}
