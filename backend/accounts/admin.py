@@ -11,6 +11,7 @@ from allauth.account.models import EmailAddress
 from progress.models import ProgressPhoto
 from progress.services import delete_account
 from .models import Profile, User
+from .administration import sync_account_email
 
 
 class AccountChangeForm(UserChangeForm):
@@ -104,12 +105,7 @@ class AccountAdmin(UserAdmin):
         # Preserve roles and credentials changed concurrently by another operator.
         obj.is_staff, obj.is_superuser = current.is_staff, current.is_superuser
         obj.save(update_fields=["email", "is_active"])
-        if old_email and old_email != obj.email:
-            # A previous address must not remain verified as the new identity.
-            EmailAddress.objects.filter(user=obj, email__iexact=old_email).delete()
-            EmailAddress.objects.filter(user=obj).update(primary=False)
-            EmailAddress.objects.update_or_create(user=obj, email=obj.email,
-                                                 defaults={"verified": False, "primary": True})
+        sync_account_email(obj, old_email)
 
     def get_deleted_objects(self, objs, request):
         objects = list(objs)
