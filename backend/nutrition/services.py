@@ -5,7 +5,8 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.db.models import Sum
+from django.db.models import Count, Sum
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from accounts.services import local_today
@@ -79,6 +80,7 @@ def day_data(user, date, day=None):
 
 def save_meal(day, data, meal=None):
     creating = meal is None
+    previous_mode = meal.entry_mode if meal else None
     mode = data.get("mode", meal.entry_mode if meal else "quick")
     if mode == "itemized" and (creating or meal.entry_mode != mode) and not data.get("items"):
         raise ValidationError({"items": ["Itemized meals require at least one item."]})
@@ -104,20 +106,33 @@ def save_meal(day, data, meal=None):
         meal.quick_calories = meal.quick_protein_g = meal.quick_carbohydrate_g = meal.quick_fat_g = None
     meal.save()
     if mode == "quick":
-        meal.items.all().delete()
+        if previous_mode == "itemized":
+            meal.items.all().delete()
     elif "items" in data:
-        existing = {item.pk: item for item in meal.items.all()}
+        existing = {item.pk: item for item in meal.items.all()} if not creating else {}
         supplied_ids = [item["id"] for item in data["items"] if "id" in item]
         if len(supplied_ids) != len(set(supplied_ids)) or any(pk not in existing for pk in supplied_ids):
             raise ValidationError({"items": ["Item IDs must be unique and belong to this meal."]})
-        meal.items.exclude(pk__in=supplied_ids).delete()
+        removed = set(existing) - set(supplied_ids)
+        if removed:
+            meal.items.filter(pk__in=removed).delete()
+        new_items, changed_items = [], []
+        fields = ["position", "name", "calories", "protein_g", "carbohydrate_g", "fat_g"]
         for position, entry in enumerate(data["items"]):
             item = existing.get(entry.get("id")) or MealItem(meal=meal)
+            before = tuple(getattr(item, field) for field in fields)
             item.position = position
             item.name = entry["name"]
             item.calories, item.protein_g, item.carbohydrate_g, item.fat_g = (entry[k] for k in KEYS)
-            item.save()
-    reconcile_rewards(day.user)
+            if item.pk not in existing:
+                new_items.append(item)
+            elif before != tuple(getattr(item, field) for field in fields):
+                item.updated_at = timezone.now()
+                changed_items.append(item)
+        if new_items:
+            MealItem.objects.bulk_create(new_items)
+        if changed_items:
+            MealItem.objects.bulk_update(changed_items, fields + ["updated_at"])
     return meal
 
 
@@ -146,19 +161,33 @@ def retry_record(user, date, key, payload):
 
 def reconcile_rewards(user):
     today = local_today(user)
-    days = NutritionDay.objects.filter(user=user, local_date__lte=today, meals__isnull=False).distinct()
-    for day in days:
-        DailyLogReward.objects.get_or_create(user=user, nutrition_day=day, defaults={"points_awarded": DAILY_XP})
-    count = DailyLogReward.objects.filter(user=user).count()
-    for code, threshold in MILESTONES:
-        if count >= threshold:
-            achievement, _ = Achievement.objects.get_or_create(code=code, defaults={
-                "title_en": f"{threshold} logged days", "title_ar": f"{threshold} أيام مسجلة",
-                "description_en": "A milestone for logging meals.", "description_ar": "إنجاز لتسجيل الوجبات.",
-                "logged_days_required": threshold})
-            UserAchievement.objects.get_or_create(user=user, achievement=achievement)
+    # Callers hold the owning user lock. Read qualifying dates once, and only
+    # insert missing rewards; query count must not grow with logging history.
+    days = list(NutritionDay.objects.filter(
+        user=user, local_date__lte=today, meals__isnull=False,
+    ).order_by("local_date").values_list("pk", "local_date").distinct())
+    rewarded = set(DailyLogReward.objects.filter(user=user).values_list("nutrition_day_id", flat=True))
+    missing = [DailyLogReward(user=user, nutrition_day_id=pk, points_awarded=DAILY_XP)
+               for pk, _ in days if pk not in rewarded]
+    if missing:
+        DailyLogReward.objects.bulk_create(missing)
+    totals = DailyLogReward.objects.filter(user=user).aggregate(count=Count("pk"), xp=Sum("points_awarded"))
+    count = totals["count"]
+    earned = set(UserAchievement.objects.filter(user=user).values_list("achievement_id", flat=True))
+    eligible = {code: threshold for code, threshold in MILESTONES if count >= threshold and code not in earned}
+    if eligible:
+        existing_codes = set(Achievement.objects.filter(code__in=eligible).values_list("code", flat=True))
+        # The catalog is shared by users, so concurrent first awards can race.
+        Achievement.objects.bulk_create([
+            Achievement(code=code, title_en=f"{threshold} logged days", title_ar=f"{threshold} أيام مسجلة",
+                        description_en="A milestone for logging meals.", description_ar="إنجاز لتسجيل الوجبات.",
+                        logged_days_required=threshold)
+            for code, threshold in eligible.items() if code not in existing_codes
+        ], ignore_conflicts=True)
+        UserAchievement.objects.bulk_create([UserAchievement(user=user, achievement_id=code) for code in eligible])
+        earned.update(eligible)
     profile, _ = GamificationProfile.objects.get_or_create(user=user)
-    dates = list(days.order_by("local_date").values_list("local_date", flat=True))
+    dates = [date for _, date in days]
     run = longest = 0
     previous = None
     for date in dates:
@@ -166,11 +195,13 @@ def reconcile_rewards(user):
         longest = max(longest, run)
         previous = date
     active = run if previous in (today, today - timedelta(days=1)) else 0
-    profile.xp_total = DailyLogReward.objects.filter(user=user).aggregate(total=Sum("points_awarded"))["total"] or 0
-    profile.longest_streak = max(profile.longest_streak, longest)
-    profile.save()
+    xp = totals["xp"] or 0
+    longest = max(profile.longest_streak, longest)
+    if (profile.xp_total, profile.longest_streak) != (xp, longest):
+        profile.xp_total, profile.longest_streak = xp, longest
+        profile.save(update_fields=["xp_total", "longest_streak", "updated_at"])
     xp = profile.xp_total
     return {"xp": xp, "level": xp // LEVEL_XP + 1, "levelProgress": xp % LEVEL_XP,
             "xpToNext": LEVEL_XP - xp % LEVEL_XP, "streak": active,
             "longestStreak": profile.longest_streak, "loggedDays": count,
-            "earned": list(UserAchievement.objects.filter(user=user).values_list("achievement_id", flat=True))}
+            "earned": sorted(earned)}
