@@ -14,6 +14,8 @@ erDiagram
     AUTH_USER ||--o{ NUTRITION_DAY : owns
     NUTRITION_DAY ||--o{ MEAL : contains
     MEAL ||--o{ MEAL_ITEM : optionally_breaks_into
+    AUTH_USER ||--o{ SAVED_FOOD : owns
+    SAVED_FOOD ||--o{ MEAL_ITEM : snapshots_into
     AUTH_USER ||--o{ WEEKLY_WEIGHT : records
     AUTH_USER ||--o{ PROGRESS_PHOTO : uploads
     AUTH_USER ||--|| GAMIFICATION_PROFILE : has
@@ -35,6 +37,21 @@ erDiagram
 - Add `created_at` and `updated_at` timestamps to mutable records unless noted.
 
 ## Tables
+
+### `saved_food`
+
+An owner-scoped, optionally archived reusable food definition. Serving nutrition is read only when a food is added; the resulting meal item stores its own snapshot so later edits or archiving never change history.
+
+| Column | Type | Rules |
+|---|---|---|
+| `user_id` | FK to auth user | Required, owner scoped |
+| `name` / `brand` | VARCHAR | Name required; brand optional |
+| `serving_amount_g` | NUMERIC(9,2) | Positive |
+| `calories_per_serving`, `protein_g_per_serving`, `fat_g_per_serving` | NUMERIC(9,2) | Nonnegative |
+| `carbs_g_per_serving` | NUMERIC(9,2) | Optional, nonnegative; detail only, never a daily target |
+| `is_archived` | BOOLEAN | Archived foods cannot be newly logged |
+
+`MealItem.saved_food`, `source_type`, `amount_g`, `serving_amount_snapshot_g`, and `carbs_g` retain traceability and calculated historical values. The existing `calories`, `protein_g`, `carbohydrate_g`, and `fat_g` columns remain authoritative for meal totals.
 
 ### `user_profile`
 

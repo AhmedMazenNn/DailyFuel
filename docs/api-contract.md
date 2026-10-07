@@ -19,6 +19,8 @@ Backend accounts exposes `accounts.models.Profile` with `user` one-to-one (relat
 
 ## Nutrition
 
+Saved foods are owner-scoped reusable definitions. `GET /saved-foods/?search=oat` lists active foods; `POST /saved-foods/`, `GET/PATCH/DELETE /saved-foods/{id}/` create, edit, and archive them. `POST /meals/{id}/items/from-saved-food/` accepts `{saved_food_id, amount_g}` and calculates Decimal nutrition on the server. The created item stores the food name, serving amount, consumed amount, and calculated nutrition snapshot. Carbohydrates are item detail only and are not added to daily targets or dashboard counters.
+
 Macros are `{calories,protein,fat}`. Meal draft is `{name,mode:'quick'|'itemized',note,totals:Macros,items:[{id?,name,calories,protein,fat}]}`. In itemized mode only item macros count. Meals return `{id,date,name,mode,note,totals,items,createdAt,position}`.
 
 - GET/PUT `nutrition-days/{date}/`: `{date,targets,totals,remaining,meals,nextMealNumber}`. PUT accepts `{targets:Macros}`. GET never creates rows. All mutations reconcile from server day response.

@@ -61,6 +61,9 @@ def meal_data(meal):
         "id": str(meal.pk), "date": meal.nutrition_day.local_date.isoformat(), "name": meal.name,
         "mode": meal.entry_mode, "note": meal.food_notes, "totals": numbers(totals),
         "items": [{"id": str(item.pk), "name": item.name, "position": item.position,
+                   "sourceType": item.source_type, "savedFoodId": str(item.saved_food_id) if item.saved_food_id else None,
+                   "amountG": float(item.amount_g) if item.amount_g is not None else None,
+                   "servingAmountG": float(item.serving_amount_snapshot_g) if item.serving_amount_snapshot_g is not None else None,
                    **numbers(dict(zip(KEYS, (item.calories, item.protein_g, item.carbohydrate_g, item.fat_g))))} for item in items],
         "createdAt": meal.created_at.isoformat(), "position": meal.position,
     }

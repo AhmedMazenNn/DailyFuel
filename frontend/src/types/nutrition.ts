@@ -19,6 +19,8 @@ export interface FoodItem extends Macros {
 
 export type FoodItemDraft = Omit<FoodItem, 'id'> & { id?: string };
 
+export interface SavedFood { id: string; name: string; brand: string; serving_amount_g: number; calories_per_serving: number; protein_g_per_serving: number; fat_g_per_serving: number; carbs_g_per_serving: number | null; notes: string; is_archived: boolean; }
+
 export interface Meal {
   position: number;
   id: string;

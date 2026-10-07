@@ -8,7 +8,7 @@ from django.db import close_old_connections, connection
 from django.test import TransactionTestCase
 from rest_framework.test import APIClient
 
-from .models import DailyLogReward, Meal, NutritionDay, UserAchievement
+from .models import DailyLogReward, Meal, NutritionDay, UserAchievement, SavedFood, MealItem
 
 
 class NutritionTests(TransactionTestCase):
@@ -83,6 +83,25 @@ class NutritionTests(TransactionTestCase):
         duplicate = self.client.patch(meal_url, {"items": [saved, saved]}, format="json")
         self.assertEqual(duplicate.status_code, 400)
         self.assertEqual(self.client.get(meal_url).data["items"], edited.data["items"])
+
+    def test_saved_food_decimal_formula_ownership_archive_and_snapshot(self):
+        response = self.client.post("/api/v1/saved-foods/", {
+            "name": "Oats", "serving_amount_g": "40.00", "calories_per_serving": "150.00",
+            "protein_g_per_serving": "5.00", "fat_g_per_serving": "3.00", "carbs_g_per_serving": "27.00",
+        }, format="json")
+        self.assertEqual(response.status_code, 201)
+        food_id = response.data["id"]
+        meal = self.post({"mode": "itemized", "items": [{"name": "placeholder", "calories": 1, "protein": 1, "fat": 1}]}).data
+        used = self.client.post(f"/api/v1/meals/{meal['id']}/items/from-saved-food/", {"saved_food_id": food_id, "amount_g": "60.00"}, format="json")
+        self.assertEqual(used.status_code, 201)
+        item = MealItem.objects.get(saved_food_id=food_id)
+        self.assertEqual(item.calories, Decimal("225.00")); self.assertEqual(item.protein_g, Decimal("7.50")); self.assertEqual(item.fat_g, Decimal("4.50"))
+        self.assertEqual(used.data["totals"]["calories"], 226.0)
+        self.client.patch(f"/api/v1/saved-foods/{food_id}/", {"calories_per_serving": "155.00"}, format="json")
+        self.assertEqual(MealItem.objects.get(pk=item.pk).calories, Decimal("225.00"))
+        self.assertEqual(self.client.delete(f"/api/v1/saved-foods/{food_id}/").status_code, 204)
+        self.assertEqual(self.client.get(f"/api/v1/meals/{meal['id']}/").status_code, 200)
+        self.assertEqual(self.client.post(f"/api/v1/meals/{meal['id']}/items/from-saved-food/", {"saved_food_id": food_id, "amount_g": 60}, format="json").status_code, 404)
 
     def test_owner_scope_and_history(self):
         meal = self.post().data

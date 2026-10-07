@@ -6,7 +6,7 @@ import {request,json} from '../utils/api';
 import {addDays,formatDate,localToday,weekStartOf} from '../utils/date';
 import {formatNumber,kgToUnit} from '../utils/format';
 import {translate,type TKey,type TVars} from '../utils/i18n';
-import type {Day,MealDraft,Settings,Targets,WeeklyRecord,ProgressPhoto} from '../types/nutrition';
+import type {Day,MealDraft,Settings,Targets,WeeklyRecord,ProgressPhoto,SavedFood} from '../types/nutrition';
 import type {Stats} from '../utils/gamification';
 import {createNutritionRequests} from '../utils/nutritionRequests';
 const EMPTY={calories:0,protein:0,carbohydrate:0,fat:0};
@@ -33,6 +33,8 @@ function useAppValue(){
  useEffect(()=>{if(settings.onboardingComplete)void loadStats().catch(e=>setError((e as Error).message));},[settings.onboardingComplete,loadStats]);
  const addMeal=async(date:string,draft:MealDraft,key:string)=>{await nutritionRequests.addMeal(date,draft,key);toast.success(t('mealSaved'));};
  const updateMeal=async(id:string,draft:MealDraft)=>{await nutritionRequests.updateMeal(id,draft);toast.success(t('mealUpdated'));};
+ const listSavedFoods=async(search='')=>request<SavedFood[]>(`saved-foods/?search=${encodeURIComponent(search)}`);
+ const addSavedFood=async(mealId:string,date:string,savedFoodId:string,amountG:string)=>{await json(`meals/${mealId}/items/from-saved-food/`,'POST',{saved_food_id:savedFoodId,amount_g:amountG});await loadDay(date);};
  const deleteMeal=async(id:string)=>{const date=Object.values(days).flatMap(d=>d.meals).find(m=>m.id===id)?.date;if(!date)throw new Error(t('errSave'));await nutritionRequests.deleteMeal(id,date);toast.success(t('mealDeleted'));};
  const reorderMeals=nutritionRequests.reorderMeals;
  const setTargets=async(date:string,targets:Targets)=>{await nutritionRequests.setTargets(date,targets);toast.success(t('targetsSaved'));};
@@ -43,7 +45,7 @@ function useAppValue(){
  const updateSettings=async(patch:Partial<Settings>)=>{const profile=await json<Settings>('profile/','PATCH',patch);setProfile(profile);return profile;};
  const safely=async(action:()=>Promise<unknown>)=>{setPending(n=>n+1);setError('');try{await action();}catch(e){setError((e as Error).message);}finally{setPending(n=>n-1);}};
  const meals=useMemo(()=>Object.values(days).flatMap(d=>d.meals),[days]);
- return {loading:!days[selectedDate],pending,error,setError,days,meals,weekly,settings,stats,today,selectedDate,setSelectedDate,selectedWeek,setSelectedWeek,lang,dir,reduceMotion,t,fmt,formatDay,formatLong,fmtWeight,getTargets:(date:string)=>days[date]?.targets??settings.initialTargets??EMPTY,getTotals:(date:string)=>days[date]?.totals??EMPTY,loadDay,loadHistory,loadWeeks,weeksNext,loadWeek,addMeal,updateMeal,deleteMeal,reorderMeals,setTargets,saveWeight,addPhoto,removePhoto,editPhoto,updateSettings,safely,logout};
+ return {loading:!days[selectedDate],pending,error,setError,days,meals,weekly,settings,stats,today,selectedDate,setSelectedDate,selectedWeek,setSelectedWeek,lang,dir,reduceMotion,t,fmt,formatDay,formatLong,fmtWeight,getTargets:(date:string)=>days[date]?.targets??settings.initialTargets??EMPTY,getTotals:(date:string)=>days[date]?.totals??EMPTY,loadDay,loadHistory,loadWeeks,weeksNext,loadWeek,addMeal,updateMeal,listSavedFoods,addSavedFood,deleteMeal,reorderMeals,setTargets,saveWeight,addPhoto,removePhoto,editPhoto,updateSettings,safely,logout};
 }
 const Context=createContext<ReturnType<typeof useAppValue>|null>(null);
 export function AppProvider({children}:{children:ReactNode}){const value=useAppValue();return <Context.Provider value={value}>{children}</Context.Provider>;}
