@@ -14,4 +14,4 @@ Validation results:
 - Desktop and mobile screenshots visually inspected.
 - `git diff --check` passed.
 
-Limitations: browser checks isolate UI with mocked responses and do not revalidate backend persistence or authentication. GitHub authentication remains invalid, so no PR can be opened against dev in this session. Nothing merged into dev or main.
+Limitations: browser checks isolate UI with mocked responses and do not revalidate backend persistence or authentication. GitHub authentication was restored after validation. The accumulated feature changes are submitted for review against `dev`.

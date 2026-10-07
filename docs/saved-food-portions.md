@@ -13,4 +13,4 @@ Validation:
 - `npm test --prefix frontend`: 7 tests passed.
 - `git diff --check`: passed.
 
-Gaps: interactive browser journeys were not automated in this change. GitHub authentication is invalid, so PR creation against dev is blocked. No changes merged into dev or main.
+Gaps: interactive browser journeys were not automated in this change. GitHub authentication was restored after validation. The accumulated feature changes are submitted for review against `dev`.

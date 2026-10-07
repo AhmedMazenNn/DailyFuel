@@ -14,4 +14,4 @@ Checks:
 - Chromium browser checks with mocked APIs passed: loading persisted photos, full-viewport dialog and original image URL, Escape/Close, delete cancellation, failure/retry, immediate available slot, replacement upload, Compare viewer, no overflow at 390px, and no browser page errors.
 - `git diff --check`: passed.
 
-GitHub authentication remains invalid; PR creation against dev is blocked. Nothing merged into dev or main.
+GitHub authentication was restored after validation. The accumulated feature changes are submitted for review against `dev`.

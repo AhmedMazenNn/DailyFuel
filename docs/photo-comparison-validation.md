@@ -14,4 +14,4 @@ Checks:
 - Desktop and mobile screenshots inspected.
 - `git diff --check`: passed.
 
-GitHub authentication remains invalid, so PR creation against dev is blocked. Nothing merged into dev or main.
+GitHub authentication was restored after validation. The accumulated feature changes are submitted for review against `dev`.
