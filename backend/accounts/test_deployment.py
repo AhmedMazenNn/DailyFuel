@@ -13,6 +13,16 @@ class AuthenticationDeploymentTests(TestCase):
     def setUp(self):
         self.client = APIClient(enforce_csrf_checks=True)
 
+    @override_settings(FRONTEND_URL="https://app.example")
+    def test_google_callback_uses_frontend_origin_behind_backend_proxy(self):
+        from .google import FrontendGoogleAdapter, google_login
+        from django.test import RequestFactory
+        from django.urls import resolve
+        request = RequestFactory().get("/accounts/google/login/", HTTP_HOST="backend.example")
+        self.assertEqual(FrontendGoogleAdapter(request).get_callback_url(request, None),
+                         "https://app.example/accounts/google/login/callback/")
+        self.assertIs(resolve("/accounts/google/login/").func, google_login)
+
     def test_anonymous_auth_writes_require_csrf(self):
         for path in ("register", "login", "password/reset", "password/reset/confirm"):
             response = self.client.post(f"/api/v1/auth/{path}/", {}, format="json")
