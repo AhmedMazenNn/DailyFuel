@@ -3,7 +3,8 @@ from django.views.decorators.csrf import csrf_protect
 from rest_framework import serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
+from accounts.permissions import IsVerifiedEmail
 from rest_framework.response import Response
 from accounts.models import validate_timezone
 from .models import ReminderPreference
@@ -31,7 +32,7 @@ class PreferenceInput(serializers.Serializer):
 
 
 @api_view(["GET", "PATCH"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsVerifiedEmail])
 def preferences(request):
     if request.method == "PATCH":
         payload = PreferenceInput(data=request.data)
@@ -43,7 +44,7 @@ def preferences(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsVerifiedEmail])
 def confirmation(request):
     return Response(preference_payload(request_confirmation(request.user)))
 

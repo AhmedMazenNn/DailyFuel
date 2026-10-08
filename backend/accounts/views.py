@@ -4,11 +4,13 @@ from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
+from .permissions import IsVerifiedEmail
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Profile, User
 from .verification import email_verified, send_verification
+from .email_templates import render_action_email
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -66,15 +68,19 @@ def login_view(request):
     email, password = credentials(request.data)
     user = authenticate(request, email=email, password=password)
     if not user: return Response({"detail": "Invalid email or password."}, status=400)
-    login(request._request, user, backend="django.contrib.auth.backends.ModelBackend"); return Response(_session_payload(user))
+    login(request._request, user, backend="django.contrib.auth.backends.ModelBackend")
+    payload = _session_payload(user)
+    if not payload["user"]["emailVerified"]:
+        payload["user"]["verificationEmailSent"] = send_verification(user)
+    return Response(payload)
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsVerifiedEmail])
 def logout_view(request):
     logout(request._request); return Response(status=204)
 
 @api_view(["PATCH"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsVerifiedEmail])
 def profile(request):
     p = request.user.profile; mapping = {"name":"display_name", "language":"locale", "weightUnit":"weight_unit", "textSize":"text_size", "reduceMotion":"reduce_motion", "showRewards":"show_rewards", "timezone":"timezone", "onboardingComplete":"onboarding_complete"}
     for key, field in mapping.items():
@@ -105,9 +111,14 @@ def password_reset(request):
         link = f"{settings.FRONTEND_URL}/?uid={uid}&token={token}&lang={user.profile.locale}"
         ar = user.profile.locale == "ar"
         subject = "إعادة تعيين كلمة مرور DailyFuel" if ar else "DailyFuel password reset"
-        body = f"أعد تعيين كلمة المرور: {link}" if ar else f"Reset your password: {link}"
+        intro = "تلقينا طلبًا لإعادة تعيين كلمة مرور حسابك في DailyFuel. اختر كلمة مرور جديدة باستخدام الزر أدناه." if ar else "We received a request to reset your DailyFuel password. Use the button below to choose a new password."
+        note = "إذا لم تطلب ذلك، تجاهل هذه الرسالة. لن تتغير كلمة مرورك حتى تختار كلمة مرور جديدة. تنتهي صلاحية هذا الرابط ويمكن استخدامه مرة واحدة فقط." if ar else "If you didn't request this, you can ignore this email. Your password stays unchanged until you choose a new one. This link expires and can only be used once."
+        label = "إعادة تعيين كلمة المرور" if ar else "Reset password"
+        body = f"{intro}\n\n{note}\n\n{label}: {link}"
+        html = render_action_email(locale=user.profile.locale, subject=subject, body=intro,
+                                   action_label=label, action_url=link, note=note)
         try:
-            send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email])
+            send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email], html_message=html)
         except Exception:
             logging.getLogger(__name__).warning("Password reset email delivery failed")
     return Response({"detail": "If the account exists, a reset link has been sent."})

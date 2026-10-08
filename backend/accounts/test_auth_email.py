@@ -1,4 +1,5 @@
 from unittest.mock import patch
+from html import unescape
 from urllib.parse import urlsplit, parse_qs
 
 from allauth.account.models import EmailAddress, EmailConfirmationHMAC
@@ -57,7 +58,11 @@ class AuthEmailTests(TestCase):
     def test_reset_and_reuse(self):
         response = self.client.post('/api/v1/auth/password/reset/', {'email': self.user.email})
         self.assertEqual(response.status_code, 200)
-        params = {k: v[0] for k, v in parse_qs(urlsplit(mail.outbox[0].body.split()[-1]).query).items()}
+        reset_url = mail.outbox[0].body.split()[-1]
+        html = unescape(mail.outbox[0].alternatives[0].content)
+        self.assertIn(f'href="{reset_url}"', html)
+        self.assertNotIn('unsubscribe', html)
+        params = {k: v[0] for k, v in parse_qs(urlsplit(reset_url).query).items()}
         params['password'] = 'ReplacementPassword123!'
         self.assertEqual(self.client.post('/api/v1/auth/password/reset/confirm/', params).status_code, 200)
         self.assertEqual(self.client.post('/api/v1/auth/password/reset/confirm/', params).status_code, 400)
@@ -74,3 +79,13 @@ class AuthEmailTests(TestCase):
     def test_csrf_required_for_confirmation(self):
         client = APIClient(enforce_csrf_checks=True)
         self.assertEqual(client.post('/api/v1/auth/email/verify/', {'token': 'bad'}).status_code, 403)
+
+    def test_arabic_reset_has_rtl_html_and_plain_text(self):
+        self.user.profile.locale = 'ar'
+        self.user.profile.save()
+        response = self.client.post('/api/v1/auth/password/reset/', {'email': self.user.email})
+        self.assertEqual(response.status_code, 200)
+        message = mail.outbox[0]
+        self.assertIn('إعادة تعيين كلمة المرور', message.body)
+        self.assertIn('dir="rtl"', message.alternatives[0].content)
+        self.assertIn('lang=ar', message.body)

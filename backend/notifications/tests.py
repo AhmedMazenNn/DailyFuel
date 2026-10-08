@@ -123,6 +123,15 @@ class ConsentTests(TestCase):
         self.assertIn('/email-preferences/unsubscribe?', message.body)
         self.assertNotIn('weightKg', message.body)
         self.assertNotIn('/api/v1/progress/photos/', message.body)
+        html = message.alternatives[0].content
+        self.assertIn('href="https://dailyfuel.example/progress"', html)
+        self.assertIn('/email-preferences/unsubscribe?', html)
+        self.assertIn('opted in', html)
+        self.assertNotIn('/api/v1/progress/photos/', html)
+        self.assertNotIn('weightKg', html)
+        self.assertNotIn('progress photos', html)
+        preference.include_photos = True
+        self.assertIn('progress photos', make_message(preference, 'reminder').alternatives[0].content)
         self.user.profile.locale = 'ar'
         self.user.profile.save()
         preference.user = self.user

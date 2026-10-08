@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="{{ locale }}" dir="{{ direction }}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ subject }}</title></head>
+<body style="margin:0;padding:0;background-color:#eef3fc;color:#172b4d;font-family:Arial,Helvetica,sans-serif;">
+  <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">{{ subject }}</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#eef3fc;">
+    <tr><td align="center" style="padding:32px 12px;">
+      <table role="presentation" width="560" cellspacing="0" cellpadding="0" border="0" dir="{{ direction }}" style="width:100%;max-width:560px;background-color:#ffffff;border:1px solid #dce5f5;border-radius:20px;">
+        <tr><td align="{{ align }}" style="padding:28px 28px 24px;background-color:#2457e8;border-radius:20px 20px 0 0;color:#ffffff;">
+          <p style="margin:0;font-size:26px;font-weight:bold;" dir="ltr">DailyFuel</p>
+          <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#ffffff;">{{ tagline }}</p>
+        </td></tr>
+        <tr><td align="{{ align }}" style="padding:28px;">
+          <h1 style="margin:0 0 18px;font-size:24px;line-height:1.4;color:#172b4d;">{{ subject }}</h1>
+          <p style="margin:0 0 24px;font-size:16px;line-height:1.8;color:#405474;">{{ body }}</p>
+          <table role="presentation" align="{{ align }}" cellspacing="0" cellpadding="0" border="0"><tr><td bgcolor="#2457e8" style="border-radius:10px;text-align:center;">
+            <a href="{{ action_url }}" style="display:inline-block;padding:15px 24px;border:1px solid #2457e8;border-radius:10px;color:#ffffff;text-decoration:none;font-size:16px;line-height:1.5;font-weight:bold;">{{ action_label }}</a>
+          </td></tr></table>
+          <p style="margin:24px 0 0;font-size:14px;line-height:1.8;color:#405474;">{{ note }}</p>
+          <hr style="margin:24px 0;border:0;border-top:1px solid #dce5f5;">
+          <p style="margin:0 0 8px;font-size:12px;line-height:1.7;color:#536580;">{{ fallback }}</p>
+          <p dir="ltr" style="margin:0;font-size:12px;line-height:1.7;word-break:break-all;overflow-wrap:anywhere;"><a href="{{ action_url }}" style="color:#2457e8;">{{ action_url }}</a></p>
+          {% if unsubscribe_url %}<p style="margin:24px 0 0;font-size:13px;line-height:1.7;"><a href="{{ unsubscribe_url }}" style="color:#405474;text-decoration:underline;">{{ unsubscribe_label }}</a></p>{% endif %}
+        </td></tr>
+      </table>
+      <p style="margin:20px 0 0;font-size:12px;color:#536580;" dir="ltr">DailyFuel</p>
+    </td></tr>
+  </table>
+</body>
+</html>

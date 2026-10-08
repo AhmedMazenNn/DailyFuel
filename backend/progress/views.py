@@ -3,6 +3,7 @@ from django.db import transaction
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from accounts.permissions import IsVerifiedEmail
 from accounts.services import local_today
 from .models import WeeklyWeight
 from .serializers import WeightInput, parse_week, serialize_week
@@ -13,6 +14,7 @@ class WeekPagination(PageNumberPagination):
 
 
 class WeeksView(APIView):
+    permission_classes = [IsVerifiedEmail]
     def get(self, request):
         paginator = WeekPagination()
         records = WeeklyWeight.objects.filter(user=request.user).prefetch_related("photos")
@@ -21,6 +23,7 @@ class WeeksView(APIView):
 
 
 class WeekView(APIView):
+    permission_classes = [IsVerifiedEmail]
     def get(self, request, week_start):
         week = parse_week(week_start)
         record = WeeklyWeight.objects.filter(user=request.user, week_start=week).first()
