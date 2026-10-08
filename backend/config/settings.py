@@ -31,7 +31,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 AUTH_USER_MODEL = "accounts.User"
 AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend", "allauth.account.auth_backends.AuthenticationBackend"]
 AUTH_PASSWORD_VALIDATORS = [{"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"}, {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 10}}, {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"}, {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"}]
-REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"], "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"], "COERCE_DECIMAL_TO_STRING": False}
+REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"], "DEFAULT_PERMISSION_CLASSES": ["accounts.permissions.IsVerifiedEmail"], "COERCE_DECIMAL_TO_STRING": False}
 LANGUAGE_CODE = "en"
 TIME_ZONE = "UTC"
 USE_I18N = True
@@ -75,13 +75,17 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend")
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND") or (
+    "accounts.email_backend.BrevoEmailBackend" if BREVO_API_KEY else
+    "django.core.mail.backends.console.EmailBackend" if DEBUG else
+    "django.core.mail.backends.smtp.EmailBackend"
+)
 EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() == "true"
-BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
 EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "15"))
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "DailyFuel <noreply@localhost>")
 ACCOUNT_LOGIN_METHODS = {"email"}

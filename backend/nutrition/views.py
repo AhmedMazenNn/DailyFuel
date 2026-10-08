@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from accounts.permissions import IsVerifiedEmail
 
 from .models import IdempotencyRecord, Meal, MealItem, NutritionDay, SavedFood
 from .serializers import ItemSerializer, MealSerializer, OrderSerializer, TargetsSerializer, SavedFoodSerializer, SavedFoodUseSerializer
@@ -30,7 +30,7 @@ def validated(serializer_class, data, partial=False):
 
 
 class PrivateView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsVerifiedEmail]
 
 
 class DayView(PrivateView):

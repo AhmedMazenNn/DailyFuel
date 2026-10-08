@@ -2,7 +2,7 @@ from urllib.parse import urlencode
 from django.conf import settings
 from django.core import signing
 from django.core.mail import EmailMultiAlternatives
-from django.utils.html import format_html
+from accounts.email_templates import render_action_email
 
 CONFIRM_SALT = "dailyfuel.weekly-email.confirm"
 UNSUBSCRIBE_SALT = "dailyfuel.weekly-email.unsubscribe"
@@ -39,9 +39,11 @@ def make_message(preference, kind):
         url = settings.FRONTEND_URL + "/progress"
     unsubscribe = action_url(preference, "unsubscribe")
     unsub_label = "إيقاف التذكيرات" if arabic else "Unsubscribe from reminders"
-    text = f"{body}\n\n{label}: {url}\n\n{unsub_label}: {unsubscribe}"
-    html = format_html('<!doctype html><html lang="{}" dir="{}"><body style="margin:0;background:#f2f6ff;font-family:Arial,sans-serif;color:#132442"><div style="max-width:540px;margin:32px auto;padding:32px;background:#fff;border-radius:24px"><h1 style="color:#2457e8;font-size:26px">DailyFuel</h1><h2 style="font-size:21px">{}</h2><p style="line-height:1.7">{}</p><p style="margin:28px 0"><a href="{}" style="display:inline-block;padding:14px 22px;border-radius:12px;background:#2457e8;color:#fff;text-decoration:none;font-weight:bold">{}</a></p><p style="font-size:13px"><a href="{}" style="color:#50617d">{}</a></p></div></body></html>',
-                       "ar" if arabic else "en", "rtl" if arabic else "ltr", subject, body, url, label, unsubscribe, unsub_label)
+    note = ("لن نرسل التذكيرات الأسبوعية حتى تؤكد اختيارك. يمكنك إيقافها في أي وقت." if arabic else "Weekly reminders start only after you confirm. You can turn them off at any time.") if kind == "confirmation" else ("تصلك هذه الرسالة لأنك اخترت تذكيرات التقدم الأسبوعية. يمكنك تغيير الموعد من ملفك الشخصي أو إيقاف التذكيرات أدناه." if arabic else "You're receiving this because you opted in to weekly progress reminders. Change your schedule in Profile or unsubscribe below.")
+    text = f"{body}\n\n{label}: {url}\n\n{note}\n\n{unsub_label}: {unsubscribe}"
+    html = render_action_email(locale=preference.user.profile.locale, subject=subject, body=body,
+                               action_label=label, action_url=url, note=note,
+                               unsubscribe_url=unsubscribe, unsubscribe_label=unsub_label)
     message = EmailMultiAlternatives(subject, text, settings.DEFAULT_FROM_EMAIL, [preference.user.email])
     message.attach_alternative(str(html), "text/html")
     return message

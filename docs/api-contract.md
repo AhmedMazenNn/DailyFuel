@@ -5,10 +5,12 @@ All JSON routes use `/api/v1/`, Django session cookies and CSRF. Decimal databas
 ## Accounts
 
 - GET `auth/csrf/`: establishes CSRF cookie.
-- GET `auth/session/`: `{user: null}` or `{user: {id, email}, profile: Settings}`.
-- POST `auth/register/`: `{email,password,name}`; signs in and returns session payload.
+- GET `auth/session/`: `{user: null}` or `{user: {id, email, isAdmin, emailVerified}, profile: Settings}`.
+- POST `auth/register/`: `{email,password,name}`; signs in, attempts a verification email, and returns session payload with `user.verificationEmailSent`.
 - POST `auth/login/`: `{email,password}`; returns session payload.
 - POST `auth/logout/`.
+- POST `auth/email/resend/`: authenticated; sends a verification link, with a one-minute per-account cache cooldown (429 if throttled or delivery fails).
+- POST `auth/email/verify/`: `{token}`; anonymous with CSRF, confirms the current active account email. Invalid, expired, or consumed keys return 400. GET cannot confirm. Verification is optional for sign-in and independent of reminder consent.
 - POST `auth/password/reset/`: `{email}`; generic response, sends reset link.
 - POST `auth/password/reset/confirm/`: `{uid,token,password}`.
 - GET `auth/config/`: `{googleEnabled: boolean}`. Google uses maintained allauth OAuth routes under `/accounts/`.
