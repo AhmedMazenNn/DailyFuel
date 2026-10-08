@@ -10,8 +10,9 @@ export function BrandMark() {
           <path d="M12 8v4l2.5 2" />
         </svg>
       </span>
-      <span className="font-display text-lg font-extrabold tracking-tight text-ink" dir="ltr">
-        DailyFuel
+      <span className="flex flex-col leading-none" dir="ltr">
+        <span className="font-display text-lg font-extrabold tracking-tight text-ink">DailyFuel</span>
+        <span className="mt-1 text-[9px] font-semibold uppercase tracking-[.16em] text-ink-soft">One meal at a time.</span>
       </span>
     </div>);
 

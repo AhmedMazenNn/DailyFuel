@@ -10,6 +10,6 @@ def render_action_email(*, locale, subject, body, action_label, action_url, note
         "align": "right" if arabic else "left", "subject": subject, "body": body,
         "action_label": action_label, "action_url": action_url, "note": note,
         "unsubscribe_url": unsubscribe_url, "unsubscribe_label": unsubscribe_label,
-        "tagline": "خطوات صغيرة، وثبات كل أسبوع." if arabic else "Small steps. A little consistency.",
+        "tagline": "وجبة واحدة في كل مرة." if arabic else "One meal at a time.",
         "fallback": "إذا لم يعمل الزر، انسخ هذا الرابط وافتحه في متصفحك:" if arabic else "If the button doesn't work, copy this link into your browser:",
     })
