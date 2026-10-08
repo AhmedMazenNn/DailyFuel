@@ -2,6 +2,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { LoadingScreen } from './components/ui/LoadingScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Auth } from './pages/Auth';
+import { EmailVerification } from './pages/EmailVerification';
 import { EmailReminderAction } from './pages/EmailReminderAction';
 import { AppProvider } from './contexts/AppContext';
 import { AppShell } from './components/layout/AppShell';
@@ -32,6 +33,9 @@ function Application() {
   const { session, error, refresh } = useAuth();
   if (window.location.pathname === "/email-preferences/confirm") return <EmailReminderAction action="confirm" />;
   if (window.location.pathname === "/email-preferences/unsubscribe") return <EmailReminderAction action="unsubscribe" />;
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('verify_email')) return <EmailVerification />;
+  if (params.has('uid') && params.has('token')) return <Auth />;
   if (error) return <main className="p-8"><p role="alert">{error}</p><button onClick={() => void refresh()}>Retry</button></main>;
   if (!session) return <LoadingScreen />;
   if (!session.user) return <Auth />;

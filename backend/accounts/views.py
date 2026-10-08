@@ -8,6 +8,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Profile, User
+from .verification import email_verified, send_verification
+from django.core.cache import cache
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.contrib.auth.password_validation import validate_password
+import logging
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -20,7 +26,7 @@ def _profile(p):
             "initialTargets": {"calories": float(p.initial_calories), "protein": float(p.initial_protein), "carbohydrate": float(p.initial_carbohydrate), "fat": float(p.initial_fat)}}
 
 def _session_payload(user):
-    return {"user": {"id": str(user.pk), "email": user.email, "isAdmin": user.is_active and user.is_superuser}, "profile": _profile(user.profile)}
+    return {"user": {"id": str(user.pk), "email": user.email, "isAdmin": user.is_active and user.is_superuser, "emailVerified": email_verified(user)}, "profile": _profile(user.profile)}
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
@@ -40,12 +46,18 @@ def credentials(data):
 @csrf_protect
 def register(request):
     email, password = credentials(request.data)
-    if len(password) < 10: return Response({"password": ["Use at least 10 characters."]}, status=400)
+    try:
+        validate_email(email)
+        validate_password(password, User(email=email))
+    except ValidationError as exc:
+        return Response({"detail": exc.messages}, status=400)
     if User.objects.filter(email__iexact=email).exists(): return Response({"email": ["An account already exists."]}, status=400)
     user = User.objects.create_user(email=email, password=password)
     user.profile.display_name = str(request.data.get("name", ""))[:100]; user.profile.save()
     login(request._request, user, backend="django.contrib.auth.backends.ModelBackend")
-    return Response(_session_payload(user))
+    payload = _session_payload(user)
+    payload["user"]["verificationEmailSent"] = send_verification(user)
+    return Response(payload)
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -85,13 +97,19 @@ def auth_config(request):
 @csrf_protect
 def password_reset(request):
     email = str(request.data.get("email", "")).strip().lower()
-    user = User.objects.filter(email__iexact=email).first()
-    if user:
+    user = User.objects.filter(email__iexact=email, is_active=True).first()
+    if user and user.has_usable_password() and cache.add(f"password-reset:{user.pk}", True, 60):
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         from django.conf import settings
-        link = f"{settings.FRONTEND_URL}/?uid={uid}&token={token}"
-        send_mail("DailyFuel password reset", f"Reset your password: {link}", settings.DEFAULT_FROM_EMAIL, [user.email])
+        link = f"{settings.FRONTEND_URL}/?uid={uid}&token={token}&lang={user.profile.locale}"
+        ar = user.profile.locale == "ar"
+        subject = "إعادة تعيين كلمة مرور DailyFuel" if ar else "DailyFuel password reset"
+        body = f"أعد تعيين كلمة المرور: {link}" if ar else f"Reset your password: {link}"
+        try:
+            send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email])
+        except Exception:
+            logging.getLogger(__name__).warning("Password reset email delivery failed")
     return Response({"detail": "If the account exists, a reset link has been sent."})
 
 @api_view(["POST"])
@@ -99,12 +117,15 @@ def password_reset(request):
 @csrf_protect
 def password_reset_confirm(request):
     try:
-        user = User.objects.get(pk=urlsafe_base64_decode(str(request.data.get("uid", ""))).decode())
+        user = User.objects.get(is_active=True, pk=urlsafe_base64_decode(str(request.data.get("uid", ""))).decode())
     except Exception:
         return Response({"detail": "Invalid reset link."}, status=400)
     if not default_token_generator.check_token(user, request.data.get("token", "")):
         return Response({"detail": "Invalid or expired reset link."}, status=400)
     password = str(request.data.get("password", ""))
-    if len(password) < 10: return Response({"password": ["Use at least 10 characters."]}, status=400)
+    try:
+        validate_password(password, user)
+    except ValidationError as exc:
+        return Response({"password": exc.messages}, status=400)
     user.set_password(password); user.save(update_fields=["password"])
     return Response({"detail": "Password updated."})
