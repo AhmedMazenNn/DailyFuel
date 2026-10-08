@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { json, request } from '../utils/api';
 import type { Settings } from '../types/nutrition';
-export interface Session { user: { id: string; email: string; isAdmin?: boolean } | null; profile?: Settings }
+export interface Session { user: { id: string; email: string; isAdmin?: boolean; emailVerified?: boolean; verificationEmailSent?: boolean } | null; profile?: Settings }
 interface AuthValue { session: Session | null; error: string; refresh: () => Promise<void>; authenticate: (mode: 'login' | 'register', data: {email: string; password: string; name?: string}) => Promise<void>; logout: () => Promise<void>; setProfile: (profile: Settings) => void }
 const Context = createContext<AuthValue | null>(null);
 export function AuthProvider({children}: {children: ReactNode}) {
