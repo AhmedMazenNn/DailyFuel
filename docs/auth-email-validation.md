@@ -12,4 +12,4 @@ Checks:
 - Frontend lint: zero errors; existing SavedFoods hook dependency warning.
 - Independent frontend/backend integration review completed; Arabic link language and reset cancellation navigation addressed.
 
-Gaps: no live provider delivery, deployed browser smoke test, or deployment environment inspection. Cache cooldown is per process with the default cache. GitHub CLI authentication is invalid, preventing PR creation/merge against dev. Production delivery requires BREVO_API_KEY, a verified DEFAULT_FROM_EMAIL, correct FRONTEND_URL, and no conflicting EMAIL_BACKEND override.
+Gaps: no live provider delivery, deployed browser smoke test, or deployment environment inspection. Cache cooldown is per process with the default cache. Production delivery requires BREVO_API_KEY, a verified DEFAULT_FROM_EMAIL, correct FRONTEND_URL, and no conflicting EMAIL_BACKEND override.
