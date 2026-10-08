@@ -1,11 +1,12 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 from .models import User
+from .test_helpers import verify_test_user
 
 
 class SignOutTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user("logout@example.com", "StrongSessionPassword123!")
+        self.user = verify_test_user(User.objects.create_user("logout@example.com", "StrongSessionPassword123!"))
         self.client = APIClient(enforce_csrf_checks=True)
         self.client.force_login(self.user)
 

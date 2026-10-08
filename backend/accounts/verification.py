@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_protect
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from .email_templates import render_action_email
 
 
 def email_verified(user):
@@ -26,9 +27,14 @@ def send_verification(user):
     link = f"{settings.FRONTEND_URL}/?{urlencode({'verify_email': token, 'lang': user.profile.locale})}"
     ar = user.profile.locale == "ar"
     subject = "تأكيد بريد DailyFuel" if ar else "Verify your DailyFuel email"
-    body = f"أكد بريدك الإلكتروني: {link}" if ar else f"Confirm your email address: {link}\n\nIf you did not request this, ignore this email."
+    intro = "أكد بريدك الإلكتروني في DailyFuel باستخدام الزر أدناه." if ar else "Confirm your DailyFuel email address using the button below."
+    note = "إذا لم تطلب إنشاء هذا الحساب، يمكنك تجاهل هذه الرسالة." if ar else "If you did not create this account, you can ignore this email."
+    label = "تأكيد البريد الإلكتروني" if ar else "Verify email address"
+    body = f"{intro}\n\n{label}: {link}\n\n{note}"
+    html = render_action_email(locale=user.profile.locale, subject=subject, body=intro,
+                               action_label=label, action_url=link, note=note)
     try:
-        return send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email]) == 1
+        return send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email], html_message=html) == 1
     except Exception:
         logging.getLogger(__name__).warning("Verification email delivery failed")
         return False

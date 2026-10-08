@@ -9,11 +9,12 @@ from django.test import TransactionTestCase
 from rest_framework.test import APIClient
 
 from .models import DailyLogReward, Meal, NutritionDay, UserAchievement, SavedFood, MealItem
+from accounts.test_helpers import verify_test_user
 
 
 class NutritionTests(TransactionTestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user(email="nutrition@example.com", password="SecureTest123!")
+        self.user = verify_test_user(get_user_model().objects.create_user(email="nutrition@example.com", password="SecureTest123!"))
         profile = self.user.profile
         profile.initial_calories = Decimal("2000")
         profile.initial_protein = Decimal("120")

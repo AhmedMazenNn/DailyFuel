@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
 from accounts.models import User
+from accounts.test_helpers import verify_test_user
 from accounts.email_backend import EmailDeliveryRejected, EmailDeliveryUncertain
 from .messages import confirmation_token, unsubscribe_token, make_message
 from .models import ReminderPreference, ReminderDelivery, ReminderDailyBudget
@@ -38,7 +39,7 @@ class ScheduleTests(SimpleTestCase):
 @override_settings(**EMAIL_SETTINGS)
 class ConsentTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user('reminder@example.com', 'password')
+        self.user = verify_test_user(User.objects.create_user('reminder@example.com', 'password'))
 
     def enable(self):
         return update_preference(self.user, {'enabled': True})
@@ -142,7 +143,7 @@ class ConsentTests(TestCase):
 @override_settings(**EMAIL_SETTINGS)
 class ReminderAPITests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user('api-reminder@example.com', 'password')
+        self.user = verify_test_user(User.objects.create_user('api-reminder@example.com', 'password'))
         self.client = APIClient()
         self.client.force_authenticate(self.user)
         self.url = '/api/v1/email-reminders/'
@@ -184,7 +185,7 @@ class ReminderAPITests(TestCase):
 @override_settings(**EMAIL_SETTINGS)
 class ReminderWorkerTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user('worker-reminder@example.com', 'password')
+        self.user = verify_test_user(User.objects.create_user('worker-reminder@example.com', 'password'))
         self.preference = ReminderPreference.objects.create(
             user=self.user, enabled=True, confirmed_email=self.user.email, confirmed_at=NOW - timedelta(days=10),
             next_due_at=NOW, schedule_timezone='UTC', include_photos=True,

@@ -4,12 +4,13 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.test import APIClient
 from .models import WeeklyWeight
+from accounts.test_helpers import verify_test_user
 
 
 class WeightTests(TestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user(email="weight@example.com", password="StrongWeightPass123!")
-        self.other = get_user_model().objects.create_user(email="other@example.com", password="StrongWeightPass123!")
+        self.user = verify_test_user(get_user_model().objects.create_user(email="weight@example.com", password="StrongWeightPass123!"))
+        self.other = verify_test_user(get_user_model().objects.create_user(email="other@example.com", password="StrongWeightPass123!"))
         self.client = APIClient()
         self.client.force_authenticate(self.user)
         self.url = "/api/v1/progress/weeks/2026-10-05/weight/"
