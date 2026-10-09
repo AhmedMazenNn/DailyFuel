@@ -15,6 +15,8 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
 if os.getenv("RENDER_EXTERNAL_HOSTNAME"):
     ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
+if os.getenv("SPACE_HOSTNAME"):
+    ALLOWED_HOSTS.append(os.environ["SPACE_HOSTNAME"])
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://dailyfuel:dailyfuel@localhost:5432/dailyfuel")
 DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=60)}
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
@@ -67,8 +69,8 @@ SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SECURE_SSL_REDIRECT = not DEBUG
-# Render terminates TLS and supplies this header to its private upstream.
-if os.getenv("TRUST_PROXY_HEADERS", "false").lower() == "true":
+# Render and Hugging Face terminate TLS before forwarding to the container.
+if os.getenv("TRUST_PROXY_HEADERS", "false").lower() == "true" or os.getenv("SPACE_ID"):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_HSTS_SECONDS = 0 if DEBUG else 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG

@@ -1,8 +1,14 @@
-# Deploy DailyFuel: Render + Neon + Vercel
+# Deploy DailyFuel: Hugging Face Spaces or Render + Neon + Vercel
 
 For opt-in weekly emails, follow [the Brevo and GitHub Actions setup guide](weekly-email-reminders.md).
 
 Deploy from `main`. The backend runs on Render's free web service, PostgreSQL stays in your existing Neon project, and Vercel serves the frontend. Photos require persistent **private** object storage; Render's free filesystem is temporary.
+
+## Hugging Face Spaces
+
+To run the backend as a Docker Space, follow [`huggingface-space.md`](huggingface-space.md).
+The root `Dockerfile` listens on HF's required port `7860`; Neon remains the
+database and private object storage remains external.
 
 ## 1. Prepare private photos and password-reset email
 

@@ -1,3 +1,12 @@
+---
+title: DailyFuel API
+emoji: 🥗
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+---
+
 # DailyFuel
 
 DailyFuel tracks calorie, protein, and fat targets, meals with saved-food portions, and private weekly weight and photo progress. It supports English and Arabic, dark mode, and photo comparisons.
