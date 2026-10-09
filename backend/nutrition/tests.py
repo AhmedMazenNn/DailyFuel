@@ -145,7 +145,7 @@ class NutritionTests(TransactionTestCase):
 
     def test_owner_scope_and_history(self):
         meal = self.post().data
-        other = get_user_model().objects.create_user(email="other@example.com", password="SecureTest123!")
+        other = verify_test_user(get_user_model().objects.create_user(email="other@example.com", password="SecureTest123!"))
         self.client.force_authenticate(other)
         url = f"/api/v1/meals/{meal['id']}/"
         for response in [self.client.get(url), self.client.patch(url, {"name": "Hijack"}, format="json"), self.client.delete(url)]:

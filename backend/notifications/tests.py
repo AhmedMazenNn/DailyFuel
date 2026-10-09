@@ -154,7 +154,7 @@ class ReminderAPITests(TestCase):
         self.assertFalse(response.data['enabled'])
         self.assertFalse(response.data['confirmed'])
         self.client.patch(self.url, {'enabled': True}, format='json')
-        other = User.objects.create_user('other-reminder@example.com', 'password')
+        other = verify_test_user(User.objects.create_user('other-reminder@example.com', 'password'))
         self.client.force_authenticate(other)
         self.assertFalse(self.client.get(self.url).data['enabled'])
         self.client.force_authenticate(None)

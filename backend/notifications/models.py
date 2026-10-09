@@ -10,7 +10,8 @@ class ReminderPreference(models.Model):
     enabled = models.BooleanField(default=False)
     weekday = models.PositiveSmallIntegerField(default=0, validators=[MaxValueValidator(6)])
     local_time = models.TimeField(default=time(9))
-    include_photos = models.BooleanField(default=True)
+    # Reminder emails must not mention progress photos unless the user opts in.
+    include_photos = models.BooleanField(default=False)
     confirmed_email = models.EmailField(blank=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
     confirmation_nonce = models.UUIDField(default=uuid.uuid4)
