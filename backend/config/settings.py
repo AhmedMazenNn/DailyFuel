@@ -18,6 +18,11 @@ if os.getenv("RENDER_EXTERNAL_HOSTNAME"):
 if os.getenv("SPACE_HOSTNAME"):
     ALLOWED_HOSTS.append(os.environ["SPACE_HOSTNAME"])
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://dailyfuel:dailyfuel@localhost:5432/dailyfuel")
+if os.getenv("SPACE_ID") and "localhost" in DATABASE_URL:
+    raise ImproperlyConfigured(
+        "Hugging Face Space is missing DATABASE_URL. Add the full Neon PostgreSQL "
+        "connection string in Space Settings → Variables and secrets, then restart."
+    )
 DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=60)}
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = os.getenv(
