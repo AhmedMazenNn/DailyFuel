@@ -6,19 +6,19 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://dailyfuel-4jtm.onrender.com/api/$1"
+      "destination": "https://ahmedmazen-djangomart.hf.space/api/$1"
     },
     {
       "source": "/accounts/(.*)",
-      "destination": "https://dailyfuel-4jtm.onrender.com/accounts/$1"
+      "destination": "https://ahmedmazen-djangomart.hf.space/accounts/$1"
     },
     {
       "source": "/static/(.*)",
-      "destination": "https://dailyfuel-4jtm.onrender.com/static/$1"
+      "destination": "https://ahmedmazen-djangomart.hf.space/static/$1"
     },
     {
       "source": "/admin/(.*)",
-      "destination": "https://dailyfuel-4jtm.onrender.com/admin/$1"
+      "destination": "https://ahmedmazen-djangomart.hf.space/admin/$1"
     },
     {
       "source": "/(.*)",
