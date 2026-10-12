@@ -12,7 +12,9 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY . /app
 
-RUN python manage.py collectstatic --noinput
+# Static collection only needs Django settings; runtime secrets are supplied by
+# the Space at startup, so do not require them during the image build.
+RUN DEBUG=true SECRET_KEY=build-only FRONTEND_URL=http://localhost:5173 python manage.py collectstatic --noinput
 
 EXPOSE 7860
 
