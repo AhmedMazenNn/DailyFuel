@@ -98,14 +98,14 @@ def upload_photo(user, week, values):
             if weight is None:
                 raise ValidationError({"weightKg": "Save this week's weight before uploading a photo."})
             occupied = set(weight.photos.values_list("position", flat=True))
-            if len(occupied) >= 4:
-                raise ValidationError({"image": "This week already has four photos. Delete one to add another."})
+            if len(occupied) >= 2:
+                raise ValidationError({"image": "This week already has two photos. Delete one to add another."})
             storage = private_storage()
             storage.save(keys[0], ContentFile(image))
             storage.save(keys[1], ContentFile(thumbnail))
             photo = ProgressPhoto.objects.create(
                 id=photo_id, weight=weight, file_key=keys[0], thumbnail_key=keys[1],
-                position=next(position for position in range(4) if position not in occupied),
+                position=next(position for position in range(2) if position not in occupied),
                 captured_on=values["capturedOn"], label=values.get("label", ""), note=values.get("note", ""),
             )
             transaction.on_commit(lambda: MediaDeletion.objects.filter(pk__in=[job.pk for job in jobs]).delete())

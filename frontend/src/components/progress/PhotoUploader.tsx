@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { CameraIcon, ImagePlusIcon, LoaderCircleIcon } from "lucide-react";
 import { useApp } from "../../contexts/AppContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { card } from "../../utils/styles";
 
 export function PhotoUploader() {
   const { selectedWeek, weekly, addPhoto, t } = useApp();
+  const { session } = useAuth();
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const photos = weekly[selectedWeek]?.photos ?? [];
-  const full = photos.length >= 4;
+  const full = photos.length >= 2;
   const upload = async (file: File) => {
     setError("");
     if (uploading || full) return;
@@ -40,14 +42,16 @@ export function PhotoUploader() {
         <h2 className="font-display text-lg font-bold">{t("weeklyPhotos")}</h2>
       </div>
       <p className="mt-2 text-sm text-ink-soft" aria-live="polite">
-        {photos.length}/4 · {t("photosOptional")}
+        {session?.user?.isAdmin ? `${photos.length}/2 · ${t("photosOptional")}` : t("photosComingSoon")}
       </p>
-      {full && (
+      {!session?.user?.isAdmin ? (
+        <p className="mt-2 text-sm text-ink-soft">{t("photosComingSoonHint")}</p>
+      ) : full && (
         <p className="mt-2 text-sm text-ink-soft">
           {t("photosFull")} {t("photoFullHint")}
         </p>
       )}
-      <label
+      {session?.user?.isAdmin && <label
         className={`mt-4 flex items-center justify-center gap-2 rounded-2xl border border-dashed border-brand-200 bg-brand-50 p-6 text-brand-700 focus-within:ring-2 focus-within:ring-brand-400 ${full || uploading ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
       >
         {uploading ? (
@@ -70,7 +74,7 @@ export function PhotoUploader() {
             if (file) void upload(file);
           }}
         />
-      </label>
+      </label>}
       {error && (
         <p role="alert" className="mt-2 text-sm text-red-700">
           {error}

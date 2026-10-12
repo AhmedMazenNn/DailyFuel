@@ -72,6 +72,8 @@ class PhotosView(APIView):
         return Response([serialize_photo(photo) for photo in photos])
 
     def post(self, request, week_start):
+        if not request.user.is_superuser:
+            return Response({"detail": "Progress photo uploads are coming soon."}, status=403)
         week = parse_week(week_start)
         today = local_today(request.user)
         default = today if 0 <= (today - week).days < 7 else week

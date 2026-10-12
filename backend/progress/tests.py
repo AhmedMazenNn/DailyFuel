@@ -60,10 +60,12 @@ class WeightTests(TestCase):
             return SimpleUploadedFile("progress.png", buffer.getvalue(), content_type="image/png")
 
         with TemporaryDirectory() as media, self.settings(PRIVATE_MEDIA_ROOT=media):
+            admin = verify_test_user(get_user_model().objects.create_superuser(email="photo-admin@example.com", password="StrongAdminPass123!"))
+            self.client.force_authenticate(admin)
             self.client.put(self.url, {"weightKg": 70}, format="json")
             upload_url = "/api/v1/progress/weeks/2026-10-05/photos/"
             photos = []
-            for _ in range(4):
+            for _ in range(2):
                 with self.captureOnCommitCallbacks(execute=True):
                     response = self.client.post(upload_url, {"image": image()}, format="multipart")
                 self.assertEqual(response.status_code, 201, response.data)
@@ -74,13 +76,26 @@ class WeightTests(TestCase):
             self.client.force_authenticate(self.other)
             self.assertEqual(self.client.get(first["url"]).status_code, 404)
             self.assertEqual(self.client.delete(f"/api/v1/progress/photos/{first['id']}/").status_code, 404)
-            self.client.force_authenticate(self.user)
+            self.client.force_authenticate(admin)
             with self.captureOnCommitCallbacks(execute=True):
                 self.assertEqual(self.client.delete(f"/api/v1/progress/photos/{first['id']}/").status_code, 204)
             self.assertEqual(self.client.get(first["url"]).status_code, 404)
-            self.assertEqual(ProgressPhoto.objects.count(), 3)
+            self.assertEqual(ProgressPhoto.objects.count(), 1)
             self.assertEqual(WeeklyWeight.objects.get().weight_kg, Decimal("70"))
             with self.captureOnCommitCallbacks(execute=True):
                 replacement = self.client.post(upload_url, {"image": image()}, format="multipart")
             self.assertEqual(replacement.status_code, 201, replacement.data)
-            self.assertEqual(ProgressPhoto.objects.count(), 4)
+            self.assertEqual(ProgressPhoto.objects.count(), 2)
+
+    def test_ordinary_users_cannot_upload_photos(self):
+        from io import BytesIO
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image
+        buffer = BytesIO()
+        Image.new("RGB", (10, 10), "blue").save(buffer, format="PNG")
+        response = self.client.post(
+            "/api/v1/progress/weeks/2026-10-05/photos/",
+            {"image": SimpleUploadedFile("progress.png", buffer.getvalue(), content_type="image/png")},
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, 403)
